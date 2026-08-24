@@ -1,0 +1,14 @@
+#!/bin/sh
+ROOTFS="/data/data/com.termux/files/usr/var/lib/proot-distro/containers/ubuntu/rootfs"
+
+# Montar subsistemas del kernel
+mount -o bind /dev $ROOTFS/dev 2>/dev/null || true
+mount -o bind /dev/pts $ROOTFS/dev/pts 2>/dev/null || true
+mount -t proc proc $ROOTFS/proc 2>/dev/null || true
+mount -t sysfs sys $ROOTFS/sys 2>/dev/null || true
+
+# Configurar DNS y symlink
+ln -sf /opt/cubecoders/amp/ampinstmgr $ROOTFS/usr/local/bin/ampinstmgr 2>/dev/null || true
+
+# Ejecutar ampinstmgr con chroot nativo
+chroot $ROOTFS /bin/bash -c "export PATH=/usr/local/bin:/opt/cubecoders/amp:$PATH; /opt/cubecoders/amp/ampinstmgr --version"

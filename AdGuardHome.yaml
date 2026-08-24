@@ -1,0 +1,24 @@
+bind_host: 0.0.0.0
+bind_port: 3000
+users: []
+auth_attempts: 5
+block_auth_min: 15
+http_proxy: ""
+language: es
+theme: dark
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 5353
+  upstream_dns:
+    - https://dns.cloudflare.com/dns-query
+    - https://dns.quad9.net/dns-query
+  bootstrap_dns:
+    - 1.1.1.1
+    - 8.8.8.8
+  blocking_mode: default
+  ratelimit: 0
+  cache_size: 4194304
+  cache_optimistic: true
+  protection_enabled: true
+schema_version: 29

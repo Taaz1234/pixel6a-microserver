@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel 6a ARM64 Microserver Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card-bg: rgba(23, 32, 54, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --success: #10b981;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 75%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .badge .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .specs-bar {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .spec-item {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 30px -10px var(--accent-glow);
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            flex-grow: 1;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            align-self: flex-start;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 3rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="badge">
+            <span class="dot"></span> 24/7 ONLINE • WI-FI STANDALONE
+        </div>
+        <h1>Google Pixel 6a Microserver</h1>
+        <p class="subtitle">Google Tensor G1 ARM64 • Ubuntu Server 24.04 • Docker Native</p>
+        <div class="specs-bar">
+            <div class="spec-item">CPU: 8-Core Tensor G1</div>
+            <div class="spec-item">RAM: 6 GB LPDDR5</div>
+            <div class="spec-item">Storage: 128 GB UFS 3.1</div>
+            <div class="spec-item">Kernel: Linux 5.10 GKI</div>
+        </div>
+    </header>
+
+    <main class="grid">
+        <a href="http://pixel6a-server.local:9000" class="card" target="_blank">
+            <div class="card-icon">🐳</div>
+            <div class="card-title">Portainer CE</div>
+            <div class="card-desc">Panel gráfico para desplegar, gestionar y monitorizar contenedores, imágenes y volúmenes Docker.</div>
+            <div class="card-port">Puerto :9000 / :9443</div>
+        </a>
+
+        <a href="http://pixel6a-server.local:8888" class="card" target="_blank">
+            <div class="card-icon">📜</div>
+            <div class="card-title">Dozzle Logs</div>
+            <div class="card-desc">Visor de logs en streaming y tiempo real con búsqueda instantánea y estadísticas de recursos.</div>
+            <div class="card-port">Puerto :8888</div>
+        </a>
+
+        <a href="http://pixel6a-server.local:3001" class="card" target="_blank">
+            <div class="card-icon">📊</div>
+            <div class="card-title">Uptime Kuma</div>
+            <div class="card-desc">Monitorización de estado de red, pings, latencias de servicios HTTP/TCP y alertas.</div>
+            <div class="card-port">Puerto :3001</div>
+        </a>
+
+        <div class="card">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">OpenSSH Server</div>
+            <div class="card-desc">Acceso terminal completo ARM64 directo con privilegios de root sobre el sistema Ubuntu.</div>
+            <div class="card-port">ssh root@IP -p 22</div>
+        </div>
+    </main>
+
+    <footer>
+        Pixel 6a Headless Microserver • Generado con Antigravity IDE
+    </footer>
+</body>
+</html>

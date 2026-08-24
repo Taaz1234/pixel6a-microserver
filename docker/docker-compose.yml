@@ -1,0 +1,46 @@
+services:
+  # 1. Portainer CE (ARM64) - Panel Web de Administración de Docker
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+  # 2. Dozzle - Visor de Logs en Tiempo Real para Contenedores
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # 3. Nginx Web Dashboard / Reverse Proxy
+  dashboard:
+    image: nginx:alpine
+    container_name: web_dashboard
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+
+  # 4. Uptime Kuma - Monitor de Servicios y Salud de Red
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+
+volumes:
+  portainer_data:
+  uptime_kuma_data:

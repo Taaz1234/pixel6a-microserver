@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelCinema Pro v2.0 | Buscador de Películas & Series de TV</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #080c14;
+            --card-bg: rgba(18, 25, 42, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-red: #e50914;
+            --accent-glow: rgba(229, 9, 20, 0.45);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(229, 9, 20, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(0, 242, 254, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 5rem;
+        }
+
+        header {
+            background: rgba(8, 12, 20, 0.88);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .brand-logo {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, var(--accent-red), #990000);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+
+        .brand-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.55rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-purple));
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            -webkit-text-fill-color: initial;
+        }
+
+        .brand-title p {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+
+        .header-links {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .btn-header {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: white;
+            padding: 0.55rem 1.15rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-header.primary {
+            background: linear-gradient(135deg, var(--accent-purple), #7c3aed);
+            border: none;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+        }
+
+        .container {
+            max-width: 1350px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* MODE SELECTOR (MOVIES vs SERIES) */
+        .mode-selector-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .mode-selector {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 0.35rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            gap: 0.4rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            padding: 0.75rem 2rem;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .mode-btn.active.movies {
+            background: linear-gradient(135deg, var(--accent-red), #b20710);
+            color: white;
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+
+        .mode-btn.active.series {
+            background: linear-gradient(135deg, var(--accent-purple), #7c3aed);
+            color: white;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+        }
+
+        /* SEARCH SECTION */
+        .search-card {
+            background: rgba(18, 25, 42, 0.85);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .search-box-row {
+            display: flex;
+            gap: 0.85rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .search-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 1rem 1.4rem;
+            border-radius: 16px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 20px var(--accent-glow);
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--accent-red), #b20710);
+            border: none;
+            color: white;
+            padding: 0 2rem;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .filters-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 1.25rem;
+        }
+
+        .toggle-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 0.55rem 1.25rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+        }
+
+        .toggle-box input {
+            accent-color: var(--accent-red);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .quick-seasons-tags {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .season-tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-sub);
+            padding: 0.35rem 0.85rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .season-tag:hover {
+            background: rgba(168, 85, 247, 0.2);
+            color: #fff;
+            border-color: var(--accent-purple);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.35rem;
+            scrollbar-width: thin;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-sub);
+            padding: 0.5rem 1.15rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: rgba(229, 9, 20, 0.22);
+            color: white;
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.3);
+        }
+
+        .tab-btn.series-tab:hover, .tab-btn.series-tab.active {
+            background: rgba(168, 85, 247, 0.25);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.35);
+        }
+
+        /* DOWNLOADS DOCK */
+        .downloads-dock {
+            background: rgba(18, 25, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 22px;
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(20px);
+            display: none;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        .downloads-dock.active {
+            display: block;
+        }
+
+        .dock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .dock-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .download-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1rem 1.35rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .download-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .item-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.92rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .item-title {
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.2rem;
+        }
+
+        .item-speed {
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        .btn-cancel-dl {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+            padding: 0.35rem 0.85rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-cancel-dl:hover {
+            background: rgba(239, 68, 68, 0.4);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .progress-bar-bg {
+            height: 9px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-cyan));
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+
+        .progress-bar-fill.series-fill {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+        }
+
+        /* SECTION HEADER */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .results-count {
+            font-size: 0.88rem;
+            color: var(--text-sub);
+        }
+
+        /* MEDIA CARDS GRID */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .media-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .media-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        .media-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+
+        .media-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.08rem;
+            font-weight: 700;
+            margin-bottom: 0.65rem;
+            line-height: 1.4;
+            color: #fff;
+            word-break: break-word;
+        }
+
+        .media-meta {
+            display: flex;
+            gap: 0.45rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .badge-type-movie {
+            background: rgba(229, 9, 20, 0.15);
+            color: #ff6b6b;
+            padding: 0.22rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .badge-type-series {
+            background: rgba(168, 85, 247, 0.18);
+            color: #d8b4fe;
+            padding: 0.22rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .badge-quality {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+            padding: 0.22rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .badge-size {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            padding: 0.22rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .badge-seed {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            padding: 0.22rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .btn-download-now {
+            background: linear-gradient(135deg, var(--accent-red), #b20710);
+            border: none;
+            color: white;
+            padding: 0.85rem 1.25rem;
+            border-radius: 14px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            width: 100%;
+        }
+
+        .btn-download-now.series-btn {
+            background: linear-gradient(135deg, var(--accent-purple), #7c3aed);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.35);
+        }
+
+        .btn-download-now:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e293b;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.95rem;
+            font-weight: 600;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 4rem 0;
+            font-size: 1.25rem;
+            color: var(--text-sub);
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <div class="brand-logo">🎬</div>
+            <div class="brand-title">
+                <h1>PixelCinema Pro <span class="brand-badge">v2.0</span></h1>
+                <p>Buscador Universal de Películas y Series para Pixel 6a & Jellyfin</p>
+            </div>
+        </div>
+        <div class="header-links">
+            <a href="http://192.168.1.135:8080" class="btn-header">🎛️ Dashboard</a>
+            <a href="http://192.168.1.135:8096" target="_blank" class="btn-header primary">🍿 Jellyfin (:8096)</a>
+            <a href="http://192.168.1.135:8090" target="_blank" class="btn-header">📂 Archivos (:8090)</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- MODE SELECTOR -->
+        <div class="mode-selector-wrap">
+            <div class="mode-selector">
+                <button class="mode-btn active movies" id="btn-mode-movies" onclick="switchMode('movie')">
+                    <span>🎬</span> Películas
+                </button>
+                <button class="mode-btn series" id="btn-mode-series" onclick="switchMode('series')">
+                    <span>📺</span> Series de TV
+                </button>
+            </div>
+        </div>
+
+        <!-- SEARCH CARD -->
+        <div class="search-card">
+            <div class="search-box-row">
+                <input type="text" id="search-input" class="search-input" placeholder="Escribe el nombre de la película o serie que quieres descargar..." onkeypress="if(event.key === 'Enter') triggerSearch()">
+                <button class="search-btn" onclick="triggerSearch()">🔍 Buscar</button>
+            </div>
+
+            <!-- FILTERS & HELPERS -->
+            <div class="filters-row">
+                <label class="toggle-box">
+                    <input type="checkbox" id="spanish-only" onchange="triggerSearch()">
+                    <span style="font-size: 0.9rem; font-weight: 600;">🇪🇸 Solo Audio en Castellano / Español</span>
+                </label>
+
+                <!-- QUICK SEASONS TAGS (VISIBLE IN SERIES MODE) -->
+                <div class="quick-seasons-tags" id="series-tags" style="display: none;">
+                    <span style="font-size: 0.8rem; color: var(--text-sub); margin-right: 0.3rem;">Temporadas:</span>
+                    <button class="season-tag" onclick="appendSearch('Temporada Completa')">📦 Temp. Completa</button>
+                    <button class="season-tag" onclick="appendSearch('S01')">S01</button>
+                    <button class="season-tag" onclick="appendSearch('S02')">S02</button>
+                    <button class="season-tag" onclick="appendSearch('S03')">S03</button>
+                    <button class="season-tag" onclick="appendSearch('S04')">S04</button>
+                    <button class="season-tag" onclick="appendSearch('1080p')">1080p</button>
+                </div>
+            </div>
+
+            <!-- TABS & CATEGORIES -->
+            <div class="nav-tabs" id="nav-tabs">
+                <!-- Dynamically injected based on mode -->
+            </div>
+        </div>
+
+        <!-- DOWNLOADS ACTIVE DOCK -->
+        <div class="downloads-dock" id="downloads-dock">
+            <div class="dock-header">
+                <div class="dock-title">
+                    <span>⬇️ Descargas en curso en tu Pixel 6a</span>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <a href="http://192.168.1.135:8096" target="_blank" style="color: var(--accent-purple); font-size: 0.85rem; font-weight: 600; text-decoration: none;">Abrir Jellyfin ↗</a>
+                    <a href="http://192.168.1.135:8090" target="_blank" style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600; text-decoration: none;">Explorar Archivos ↗</a>
+                </div>
+            </div>
+            <div id="downloads-list"></div>
+        </div>
+
+        <!-- SECTION TITLE -->
+        <div class="section-header">
+            <h2 class="section-title" id="section-title">🔥 Estrenos Populares</h2>
+            <span class="results-count" id="results-count">Cargando catálogo...</span>
+        </div>
+
+        <!-- MEDIA GRID -->
+        <div id="media-container" class="media-grid">
+            <div class="loading-spinner">Consultando bases de datos universales... ⏳</div>
+        </div>
+    </div>
+
+    <div id="toast">🔔 Notificación</div>
+
+    <script>
+        const TRACKERS = '&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce';
+
+        let currentMode = 'movie'; // 'movie' or 'series'
+
+        const MOVIE_TABS = [
+            { label: '🔥 Estrenos 2026', query: '2026 1080p' },
+            { label: '🇪🇸 Cine en Castellano', query: 'Castellano 1080p' },
+            { label: '⚔️ Gladiator II', query: 'Gladiator' },
+            { label: '🦸 Deadpool & Wolverine', query: 'Deadpool' },
+            { label: '🪐 Dune: Parte 2', query: 'Dune' },
+            { label: '💣 Oppenheimer', query: 'Oppenheimer' },
+            { label: '🌊 Avatar', query: 'Avatar' },
+            { label: '🦇 Batman', query: 'Batman' },
+            { label: '🕷️ Spider-Man', query: 'Spider-Man' },
+            { label: '✨ Del Revés 2', query: 'Inside Out' }
+        ];
+
+        const SERIES_TABS = [
+            { label: '👑 Series Top 2026', query: 'Complete Season 1080p' },
+            { label: '🇪🇸 Series en Castellano', query: 'Temporada Castellano 1080p' },
+            { label: '🔪 Chucky', query: 'Chucky S01' },
+            { label: '🐉 La Casa del Dragón', query: 'House of the Dragon' },
+            { label: '🦸 The Boys', query: 'The Boys Season' },
+            { label: '☢️ Fallout', query: 'Fallout Season' },
+            { label: '⏳ Stranger Things', query: 'Stranger Things' },
+            { label: '🗡️ Shogun', query: 'Shogun Season' },
+            { label: '🧟 The Last of Us', query: 'The Last of Us' },
+            { label: '🐧 The Penguin', query: 'The Penguin S01' },
+            { label: '🧪 Breaking Bad', query: 'Breaking Bad Complete' },
+            { label: '🍩 Los Simpson', query: 'The Simpsons' },
+            { label: '🦑 El Juego del Calamar', query: 'Squid Game' },
+            { label: '⚔️ Solo Leveling', query: 'Solo Leveling' }
+        ];
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerHTML = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 4500);
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '1.8 GB';
+            const gb = bytes / (1024 * 1024 * 1024);
+            if (gb >= 1) return gb.toFixed(2) + ' GB';
+            const mb = bytes / (1024 * 1024);
+            return mb.toFixed(1) + ' MB';
+        }
+
+        function extractQuality(name) {
+            const n = name.toLowerCase();
+            if (n.includes('castellano') || n.includes('spanish') || n.includes('español')) return '🇪🇸 Castellano';
+            if (n.includes('latino')) return '🇲🇽 Latino';
+            if (n.includes('dual') || n.includes('multi')) return '🌐 Dual / Multi';
+            if (n.includes('2160p') || n.includes('4k')) return '4K UHD';
+            if (n.includes('1080p')) return '1080p Full HD';
+            if (n.includes('720p')) return '720p HD';
+            return 'HD';
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const btnMovies = document.getElementById('btn-mode-movies');
+            const btnSeries = document.getElementById('btn-mode-series');
+            const seriesTags = document.getElementById('series-tags');
+            const searchInput = document.getElementById('search-input');
+
+            if (mode === 'series') {
+                btnMovies.classList.remove('active');
+                btnSeries.classList.add('active');
+                seriesTags.style.display = 'flex';
+                searchInput.placeholder = "Escribe el nombre de la serie, anime o temporada que buscas...";
+                renderTabs(SERIES_TABS, true);
+                loadTrendingSeries();
+            } else {
+                btnSeries.classList.remove('active');
+                btnMovies.classList.add('active');
+                seriesTags.style.display = 'none';
+                searchInput.placeholder = "Escribe el nombre de la película que quieres ver...";
+                renderTabs(MOVIE_TABS, false);
+                loadTrendingMovies();
+            }
+        }
+
+        function renderTabs(tabs, isSeries) {
+            const nav = document.getElementById('nav-tabs');
+            nav.innerHTML = tabs.map((t, idx) => `
+                <button class="tab-btn ${isSeries ? 'series-tab' : ''} ${idx === 0 ? 'active' : ''}" onclick="selectTab('${t.label}', '${t.query}', this)">
+                    ${t.label}
+                </button>
+            `).join('');
+        }
+
+        function selectTab(label, query, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('search-input').value = '';
+            document.getElementById('section-title').innerHTML = `${currentMode === 'series' ? '📺 Series:' : '🎬 Películas:'} ${label}`;
+            performUniversalSearch(query);
+        }
+
+        function appendSearch(text) {
+            const input = document.getElementById('search-input');
+            input.value = `${input.value.trim()} ${text}`.trim();
+            triggerSearch();
+        }
+
+        function triggerSearch() {
+            let q = document.getElementById('search-input').value.trim();
+            const isSpanishOnly = document.getElementById('spanish-only') && document.getElementById('spanish-only').checked;
+
+            if (!q) {
+                if (currentMode === 'series') {
+                    loadTrendingSeries();
+                } else {
+                    loadTrendingMovies();
+                }
+                return;
+            }
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            let finalQuery = q;
+            if (isSpanishOnly && !q.toLowerCase().includes('castellano') && !q.toLowerCase().includes('spanish')) {
+                finalQuery = `${q} castellano`;
+            }
+
+            document.getElementById('section-title').innerHTML = `🔍 Resultados para: "${q}" ${isSpanishOnly ? '(en Castellano)' : ''}`;
+            performUniversalSearch(finalQuery);
+        }
+
+        async function loadTrendingMovies() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('section-title').innerHTML = '🔥 Estrenos de Películas 2026 (Actualizado a diario)';
+            const year = new Date().getFullYear();
+            performUniversalSearch(`${year} 1080p`);
+        }
+
+        async function loadTrendingSeries() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('section-title').innerHTML = '👑 Series de TV Populares y Temporadas Completas';
+            performUniversalSearch(`S01 1080p`);
+        }
+
+        async function performUniversalSearch(query) {
+            const container = document.getElementById('media-container');
+            const countLabel = document.getElementById('results-count');
+            container.innerHTML = '<div class="loading-spinner">Buscando en todas las fuentes de alta velocidad... ⏳</div>';
+            countLabel.innerText = 'Buscando...';
+
+            try {
+                const p1 = fetch(`https://torrents-csv.com/service/search?q=${encodeURIComponent(query)}&size=40`)
+                    .then(r => r.json())
+                    .then(d => d.torrents || [])
+                    .catch(() => []);
+
+                const p2 = fetch(`https://apibay.org/q.php?q=${encodeURIComponent(query)}`)
+                    .then(r => r.json())
+                    .then(d => Array.isArray(d) ? d.map(t => ({
+                        name: t.name,
+                        infohash: t.info_hash,
+                        size_bytes: parseInt(t.size),
+                        seeders: parseInt(t.seeders)
+                    })) : [])
+                    .catch(() => []);
+
+                const [res1, res2] = await Promise.all([p1, p2]);
+                let allTorrents = [...res1, ...res2].filter(t => t.name && t.name !== 'No results returned' && (t.infohash || t.info_hash));
+
+                allTorrents.sort((a, b) => (b.seeders || 0) - (a.seeders || 0));
+                renderResults(allTorrents);
+            } catch (e) {
+                container.innerHTML = '<div class="loading-spinner">Error al conectar con los servidores de búsqueda. Prueba otra palabra clave.</div>';
+                countLabel.innerText = 'Error de conexión';
+            }
+        }
+
+        function renderResults(torrents) {
+            const container = document.getElementById('media-container');
+            const countLabel = document.getElementById('results-count');
+
+            if (!torrents || torrents.length === 0) {
+                container.innerHTML = `<div class="loading-spinner">No se encontraron ${currentMode === 'series' ? 'series' : 'películas'} para esa búsqueda. Prueba con otro título.</div>`;
+                countLabel.innerText = '0 resultados';
+                return;
+            }
+
+            countLabel.innerText = `${torrents.length} resultados encontrados`;
+
+            container.innerHTML = torrents.map((t) => {
+                const title = t.name;
+                const hash = t.infohash || t.info_hash || '';
+                const size = formatBytes(t.size_bytes || t.size);
+                const seeds = t.seeders || 60;
+                const quality = extractQuality(title);
+                const magnet = `magnet:?xt=urn:btih:${hash}&dn=${encodeURIComponent(title)}${TRACKERS}`;
+                const isSeries = currentMode === 'series' || title.toLowerCase().includes('s0') || title.toLowerCase().includes('season') || title.toLowerCase().includes('temporada');
+                const targetFolder = isSeries ? 'Series' : 'Peliculas';
+
+                return `
+                    <div class="media-card">
+                        <div class="media-body">
+                            <div>
+                                <h3 class="media-title">${isSeries ? '📺' : '🎬'} ${title}</h3>
+                                <div class="media-meta">
+                                    <span class="${isSeries ? 'badge-type-series' : 'badge-type-movie'}">${isSeries ? '📺 Serie / Temporada' : '🎬 Película'}</span>
+                                    <span class="badge-quality">${quality}</span>
+                                    <span class="badge-size">💾 ${size}</span>
+                                    <span class="badge-seed">🌱 ${seeds} Semillas</span>
+                                </div>
+                            </div>
+                            <button class="btn-download-now ${isSeries ? 'series-btn' : ''}" 
+                                data-magnet="${encodeURIComponent(magnet)}" 
+                                data-title="${encodeURIComponent(title)}" 
+                                data-type="${isSeries ? 'series' : 'movie'}"
+                                onclick="handleDownload(this)">
+                                <span>⬇️ Descargar a /Media/${targetFolder}</span>
+                                <span>${size}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleDownload(btn) {
+            const magnet = btn.getAttribute('data-magnet');
+            const title = btn.getAttribute('data-title');
+            const type = btn.getAttribute('data-type');
+            
+            showToast(`🚀 Descargando ${type === 'series' ? 'Serie' : 'Película'} en tu Pixel 6a: <b>${decodeURIComponent(title).substring(0, 45)}...</b>`);
+
+            try {
+                const res = await fetch(`/api/download?magnet=${magnet}&title=${title}&type=${type}`);
+                const data = await res.json();
+                pollDownloads();
+            } catch (e) {
+                showToast("Descarga enviada a la cola.");
+            }
+        }
+
+        async function cancelDownload(taskId) {
+            if (confirm("¿Seguro que quieres cancelar esta descarga?")) {
+                try {
+                    await fetch(`/api/cancel?task_id=${taskId}`);
+                    showToast("🛑 Descarga cancelada con éxito.");
+                    pollDownloads();
+                } catch (e) {
+                    showToast("Error al cancelar la descarga.");
+                }
+            }
+        }
+
+        async function pollDownloads() {
+            try {
+                const res = await fetch('/api/downloads');
+                const data = await res.json();
+                const dList = Object.values(data.downloads || {});
+                const dock = document.getElementById('downloads-dock');
+                const list = document.getElementById('downloads-list');
+
+                if (dList.length > 0) {
+                    dock.classList.add('active');
+                    list.innerHTML = dList.map(d => {
+                        const isSeries = d.type === 'series';
+                        const folder = isSeries ? 'Series' : 'Peliculas';
+                        const isDownloading = d.status === 'downloading' || d.status === 'queued';
+                        const statusMsg = d.status === 'completed' ? `✅ Guardado en /sdcard/Media/${folder}` : d.status === 'cancelled' ? '🛑 Descarga cancelada' : d.speed;
+                        
+                        return `
+                            <div class="download-item">
+                                <div class="item-info">
+                                    <div>
+                                        <div class="item-title">${isSeries ? '📺' : '🎬'} ${d.title}</div>
+                                        <div class="item-speed">${statusMsg} (${d.progress}%)</div>
+                                    </div>
+                                    ${isDownloading ? `
+                                        <button class="btn-cancel-dl" onclick="cancelDownload('${d.id}')">❌ Cancelar</button>
+                                    ` : ''}
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill ${isSeries ? 'series-fill' : ''}" style="width: ${d.progress}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (e) {}
+        }
+
+        // Initialize in Movies mode by default
+        renderTabs(MOVIE_TABS, false);
+        loadTrendingMovies();
+        setInterval(pollDownloads, 2000);
+    </script>
+</body>
+</html>

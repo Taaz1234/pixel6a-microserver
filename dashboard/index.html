@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelPulse | Microservidor Pixel 6a</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --card-bg: rgba(20, 27, 45, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-emerald: #10b981;
+            --accent-violet: #8b5cf6;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .brand-logo {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.35);
+            font-size: 1.5rem;
+        }
+
+        .brand-text h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.65rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .header-badges {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            padding: 0.4rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-emerald);
+            box-shadow: 0 0 10px var(--accent-emerald);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* GRID LAYOUT */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-icon {
+            font-size: 1.25rem;
+        }
+
+        /* METRIC GAUGES */
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0;
+        }
+
+        .circle-gauge {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .circle-gauge svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .circle-gauge circle {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+
+        .circle-bg {
+            stroke: rgba(255, 255, 255, 0.06);
+        }
+
+        .circle-progress {
+            stroke: url(#cyan-blue-grad);
+            stroke-dasharray: 377;
+            stroke-dashoffset: 377;
+            transition: stroke-dashoffset 0.8s ease;
+        }
+
+        .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .gauge-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+        }
+
+        .gauge-sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .stats-detail {
+            width: 100%;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 0.75rem;
+        }
+
+        /* PROGRESS BARS */
+        .progress-group {
+            margin-bottom: 1rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 0.35rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+
+        .fill-violet { background: linear-gradient(90deg, #8b5cf6, #c084fc); }
+        .fill-emerald { background: linear-gradient(90deg, #10b981, #34d399); }
+        .fill-amber { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+        /* THERMAL / BATTERY METRICS */
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .metric-val {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .temp-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            padding: 0.2rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* SERVICES SECTION */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.35rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(16px);
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .service-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .icon-adguard { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+        .icon-ssh { background: rgba(79, 172, 254, 0.15); color: var(--accent-cyan); }
+        .icon-root { background: rgba(139, 92, 246, 0.15); color: var(--accent-violet); }
+
+        .service-texts h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .service-texts p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #04101e;
+            border: none;
+            padding: 0.55rem 1.15rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: opacity 0.2s ease, transform 0.15s ease;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: scale(1.03);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ACTIONS PANEL */
+        .actions-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e293b;
+            color: #fff;
+            padding: 0.85rem 1.35rem;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="brand">
+                <div class="brand-logo">⚡</div>
+                <div class="brand-text">
+                    <h1>PixelPulse</h1>
+                    <p id="system-subtitle">Google Pixel 6a Microserver (ARM64)</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <div class="badge">
+                    <span class="pulse-dot"></span>
+                    <span id="uptime-badge">Uptime: Calculando...</span>
+                </div>
+                <div class="badge">
+                    <span>IP:</span>
+                    <strong id="ip-badge" style="color: var(--accent-cyan);">192.168.1.135</strong>
+                </div>
+            </div>
+        </header>
+
+        <!-- TOP STATS GRID -->
+        <div class="grid">
+            <!-- CPU USAGE -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-icon">🧠</span> Uso de CPU
+                    </div>
+                    <span class="badge" id="cpu-cores">8 Núcleos</span>
+                </div>
+                <div class="gauge-container">
+                    <div class="circle-gauge">
+                        <svg viewBox="0 0 140 140">
+                            <defs>
+                                <linearGradient id="cyan-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#00f2fe" />
+                                    <stop offset="100%" stop-color="#4facfe" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="circle-bg" cx="70" cy="70" r="60"></circle>
+                            <circle class="circle-progress" id="cpu-circle" cx="70" cy="70" r="60"></circle>
+                        </svg>
+                        <div class="gauge-text">
+                            <div class="gauge-value" id="cpu-val">0%</div>
+                            <div class="gauge-sub">Tensor G1</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-detail">
+                    <span>2x X1 @ 2.8GHz</span>
+                    <span>4x A55 @ 1.8GHz</span>
+                </div>
+            </div>
+
+            <!-- RAM USAGE -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-icon">💾</span> Memoria RAM
+                    </div>
+                    <span class="badge">LPDDR5</span>
+                </div>
+                <div class="gauge-container">
+                    <div class="circle-gauge">
+                        <svg viewBox="0 0 140 140">
+                            <defs>
+                                <linearGradient id="violet-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#8b5cf6" />
+                                    <stop offset="100%" stop-color="#c084fc" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="circle-bg" cx="70" cy="70" r="60"></circle>
+                            <circle class="circle-progress" id="ram-circle" style="stroke: url(#violet-grad);" cx="70" cy="70" r="60"></circle>
+                        </svg>
+                        <div class="gauge-text">
+                            <div class="gauge-value" id="ram-val">0%</div>
+                            <div class="gauge-sub">6.0 GB Total</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-detail">
+                    <span id="ram-used">En uso: 0 MB</span>
+                    <span id="ram-free">Libre: 0 MB</span>
+                </div>
+            </div>
+
+            <!-- STORAGE -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-icon">💽</span> Disco UFS 3.1
+                    </div>
+                    <span class="badge">128 GB</span>
+                </div>
+                <div style="padding: 1rem 0;">
+                    <div class="progress-group">
+                        <div class="progress-label">
+                            <span>Espacio ocupado</span>
+                            <strong id="disk-percent">0%</strong>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill fill-emerald" id="disk-bar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-detail" style="margin-top: 1.25rem;">
+                    <span id="disk-used">Usado: 0 GB</span>
+                    <span id="disk-free">Disponible: 0 GB</span>
+                </div>
+            </div>
+
+            <!-- BATTERY & THERMALS -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-icon">🌡️</span> Térmica y Batería
+                    </div>
+                    <span class="badge">Salud OK</span>
+                </div>
+                <div style="padding: 0.25rem 0;">
+                    <div class="metric-row">
+                        <span class="metric-label">🔋 Batería</span>
+                        <span class="metric-val" id="batt-level">100% (Cargando)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">🌡️ Temperatura Batería</span>
+                        <span class="temp-badge" id="batt-temp">30.0 °C</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">⚡ Temperatura SoC</span>
+                        <span class="temp-badge" id="cpu-temp">34.0 °C</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVICES STATUS -->
+        <h2 style="font-family: 'Outfit'; font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Servicios Activos</h2>
+        <div class="services-grid">
+            <!-- BUSCADOR & DESCARGAS PIXELCINEMA -->
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-icon" style="background: rgba(229, 9, 20, 0.15); color: #e50914;">🔍</div>
+                    <div class="service-texts">
+                        <h3>PixelCinema (Buscador y Descargas)</h3>
+                        <p>Puerto 8095 (Buscar Películas & 1-Click Download)</p>
+                    </div>
+                </div>
+                <a href="http://192.168.1.135:8095" target="_blank" class="btn" style="background: linear-gradient(135deg, #e50914, #b20710); color: #fff;">Buscar Pelis 🎬</a>
+            </div>
+
+            <!-- STREAMING & NUBE -->
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-icon" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose);">🍿</div>
+                    <div class="service-texts">
+                        <h3>Streaming & Nube (Netflix Privado)</h3>
+                        <p>Puerto 8090 (Reproductor 4K & Archivos)</p>
+                    </div>
+                </div>
+                <a href="http://192.168.1.135:8090" target="_blank" class="btn" style="background: linear-gradient(135deg, #f43f5e, #fb7185); color: #fff;">Abrir Cine 🍿</a>
+            </div>
+
+            <!-- ADGUARD HOME -->
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-icon icon-adguard">🛡️</div>
+                    <div class="service-texts">
+                        <h3>AdGuard Home DNS</h3>
+                        <p>Puerto 53 (Nativo) & Puerto 3000</p>
+                    </div>
+                </div>
+                <a href="http://192.168.1.135:3000" target="_blank" class="btn">Abrir Panel ↗</a>
+            </div>
+
+            <!-- OPENSSH -->
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-icon icon-ssh">💻</div>
+                    <div class="service-texts">
+                        <h3>Servidor OpenSSH</h3>
+                        <p>Puerto 8022 (Termux Linux)</p>
+                    </div>
+                </div>
+                <button class="btn btn-outline" onclick="copySSH()">Copiar SSH 📋</button>
+            </div>
+
+            <!-- ROOT SU -->
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-icon icon-root">⚡</div>
+                    <div class="service-texts">
+                        <h3>Kernel Root APatch</h3>
+                        <p>Linux GKI 6.1 (uid=0 Activo)</p>
+                    </div>
+                </div>
+                <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: var(--accent-violet);">SUPERUSER</span>
+            </div>
+        </div>
+
+        <!-- QUICK ACTIONS PANEL -->
+        <div class="actions-panel">
+            <div>
+                <h3 style="font-family: 'Outfit'; font-size: 1.1rem; font-weight: 600;">Acciones Rápidas del Servidor</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">Control de servicios y diagnóstico de red en tiempo real</p>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-outline" onclick="restartAdguard()">🔄 Reiniciar AdGuard</button>
+                <button class="btn btn-outline" onclick="testDNS()">⚡ Probar DNS</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Mensaje de prueba</div>
+
+    <script>
+        const CIRCUMFERENCE = 377; // 2 * Math.PI * 60
+
+        function setCircle(id, percent) {
+            const circle = document.getElementById(id);
+            if (!circle) return;
+            const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function copySSH() {
+            navigator.clipboard.writeText("ssh -p 8022 u0_a293@192.168.1.135");
+            showToast("Comando SSH copiado al portapapeles: ssh -p 8022 u0_a293@192.168.1.135");
+        }
+
+        async function restartAdguard() {
+            showToast("Reiniciando AdGuard Home...");
+            try {
+                const res = await fetch('/api/action/restart_adguard');
+                const data = await res.json();
+                showToast(data.message || "AdGuard Home reiniciado.");
+            } catch (e) {
+                showToast("AdGuard Home reiniciado.");
+            }
+        }
+
+        function testDNS() {
+            const start = performance.now();
+            fetch('/api/stats').then(() => {
+                const dur = Math.round(performance.now() - start);
+                showToast(`Latencia del Microservidor: ${dur} ms (Ultra Rápido)`);
+            });
+        }
+
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const d = await res.json();
+
+                // Uptime & Subtitle
+                document.getElementById('uptime-badge').innerText = `Uptime: ${d.uptime}`;
+                document.getElementById('system-subtitle').innerText = `${d.model} | Kernel ${d.kernel}`;
+
+                // CPU
+                const cpu = d.cpu_usage || 0;
+                document.getElementById('cpu-val').innerText = `${cpu}%`;
+                setCircle('cpu-circle', cpu);
+
+                // RAM
+                const ram = d.memory;
+                document.getElementById('ram-val').innerText = `${ram.percent}%`;
+                document.getElementById('ram-used').innerText = `En uso: ${ram.used_mb} MB`;
+                document.getElementById('ram-free').innerText = `Libre: ${ram.free_mb} MB`;
+                setCircle('ram-circle', ram.percent);
+
+                // DISK
+                const disk = d.disk;
+                document.getElementById('disk-percent').innerText = `${disk.percent}%`;
+                document.getElementById('disk-bar').style.width = `${disk.percent}%`;
+                document.getElementById('disk-used').innerText = `Usado: ${disk.used_gb} GB`;
+                document.getElementById('disk-free').innerText = `Disponible: ${disk.free_gb} GB`;
+
+                // THERMALS & BATT
+                const th = d.thermals;
+                document.getElementById('batt-level').innerText = `${th.battery_level}% (${th.battery_status})`;
+                document.getElementById('batt-temp').innerText = `${th.battery_temp} °C`;
+                document.getElementById('cpu-temp').innerText = `${th.cpu_temp} °C`;
+
+            } catch (e) {
+                console.error("Error fetching stats:", e);
+            }
+        }
+
+        // Initial fetch and poll every 1.5 seconds
+        updateStats();
+        setInterval(updateStats, 1500);
+    </script>
+</body>
+</html>

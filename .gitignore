@@ -1,0 +1,15 @@
+# Binarios grandes y temporales
+platform-tools/
+bluejay-factory/
+*.zip
+*.7z
+*.apk
+*.log
+aria2_bin/
+*.jar
+*.img
+!pixelmmo_source/**
+
+# Archivos de sistema
+Thumbs.db
+.DS_Store

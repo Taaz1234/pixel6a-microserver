@@ -1,0 +1,19 @@
+name: PixelMMO
+version: 1.0.0
+main: com.pixelmmo.PixelMMO
+api-version: '1.21'
+author: Antigravity
+description: Plugin MMORPG maestro con Clases, Magias, Misiones y Pase de Batalla
+commands:
+  clase:
+    description: Abre el menú de selección de clases MMORPG
+    aliases: [class, clases]
+  misiones:
+    description: Abre el panel de misiones diarias y semanales
+    aliases: [quests, quest, mision]
+  pase:
+    description: Abre el Pase de Batalla de temporada
+    aliases: [pass, battlepass]
+  stats:
+    description: Muestra tus atributos y estadísticas MMORPG
+    aliases: [mmostats, atributos]

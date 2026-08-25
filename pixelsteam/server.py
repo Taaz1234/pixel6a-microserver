@@ -143,6 +143,11 @@ class MainRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
+    def translate_path(self, path):
+        # Strip query strings and fragments cleanly
+        clean_path = urllib.parse.urlparse(path).path
+        return super().translate_path(clean_path)
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path

@@ -1,6 +1,6 @@
 /* =========================================================
-   PixelSubs Pro - Logic & Interactivity v2.4
-   With 100% Authentic Official Brand SVG CDN Logos
+   PixelSubs Pro - Logic & Interactivity v2.5
+   With 100% Authentic Brand Vectors & Pixel-Perfect Circles
    ========================================================= */
 
 const state = {
@@ -13,9 +13,9 @@ const state = {
   calcSelected: JSON.parse(localStorage.getItem('pixelsubs_calc') || '["gamepass", "netflix", "spotify", "youtube", "chatgpt", "googleone"]'),
 };
 
-function getBrandLogo(sub, size = 34) {
+function getBrandLogo(sub, size = 36) {
   const iconId = sub.icon_id || sub.id;
-  return `<img src="/icons/${iconId}.svg?v=3" width="${size}" height="${size}" alt="${sub.name}" style="width: ${size}px; height: ${size}px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${iconId}.svg';">`;
+  return `<img src="/icons/${iconId}.svg" width="${size}" height="${size}" alt="${sub.name}" class="brand-logo-img" onerror="this.onerror=null; this.src='https://api.iconify.design/logos:google-icon.svg';">`;
 }
 
 // DOM Elements
@@ -200,7 +200,7 @@ function renderGrid() {
     const cheapest = sub.cheapest_region;
     const isFav = state.favorites.includes(sub.id);
     const inCalc = state.calcSelected.includes(sub.id);
-    const brandImg = getBrandLogo(sub, 34);
+    const brandImg = getBrandLogo(sub, 36);
 
     return `
       <div class="sub-card" onclick="openDetailModal('${sub.id}')">
@@ -260,7 +260,7 @@ function openDetailModal(subId) {
   if (!sub) return;
 
   const cheapest = sub.cheapest_region;
-  const brandImg = getBrandLogo(sub, 54);
+  const brandImg = getBrandLogo(sub, 52);
   detailModal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
@@ -365,7 +365,7 @@ function renderCalculatorList() {
           <div class="calc-checkbox">
             ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 6px; background: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 2px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); overflow: hidden;">
             ${brandImg}
           </div>
           <div>

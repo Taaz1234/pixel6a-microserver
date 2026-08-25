@@ -1,11 +1,12 @@
 /* =========================================================
-   PixelGlobal Deals - Frontend Logic & Interactivity
+   PixelGlobal Deals - Frontend Logic & Interactivity v1.2
    ========================================================= */
 
 const state = {
   currentTab: 'subs',
   deals: [],
   subscriptions: [],
+  lastUpdated: '',
   favorites: JSON.parse(localStorage.getItem('pixelsteam_favs') || '[]'),
   searchTimeout: null
 };
@@ -114,16 +115,28 @@ function updateFavCount() {
 }
 
 // Cargar Suscripciones
-async function loadSubscriptions() {
+async function loadSubscriptions(forceRefresh = false) {
   showLoader(true);
-  sectionTitle.innerHTML = '<i class="fa-solid fa-credit-card"></i> Comparativa Global de Suscripciones (Netflix, Game Pass, Spotify...)';
   
   try {
-    const res = await fetch('/api/subscriptions');
-    const subs = await res.json();
-    state.subscriptions = subs;
-    renderSubscriptions(subs);
-    resultsCount.textContent = `${subs.length} plataformas comparadas`;
+    const url = forceRefresh ? '/api/subscriptions/refresh' : '/api/subscriptions';
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    state.subscriptions = data.subscriptions || data;
+    state.lastUpdated = data.last_updated || 'Hoy';
+
+    sectionTitle.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.5rem;">
+        <span><i class="fa-solid fa-credit-card"></i> Suscripciones Oficiales 2026</span>
+        <button class="quick-chip" style="font-size: 0.75rem; color: var(--accent-green);" onclick="loadSubscriptions(true)" title="Forzar actualización de tasas de cambio">
+          <i class="fa-solid fa-arrows-rotate"></i> Actualizado: ${state.lastUpdated}
+        </button>
+      </div>
+    `;
+
+    renderSubscriptions(state.subscriptions);
+    resultsCount.textContent = `${state.subscriptions.length} plataformas comparadas en vivo`;
   } catch (err) {
     console.error(err);
     gamesGrid.innerHTML = `<div class="error-msg">Error al cargar las suscripciones.</div>`;
@@ -162,7 +175,7 @@ function renderSubscriptions(subs) {
           
           <div class="sub-price-comparison">
             <div class="price-row-compare">
-              <span class="label">🇪🇸 Precio España:</span>
+              <span class="label">🇪🇸 España (Oficial):</span>
               <span class="val-spain">${sub.spain_price.toFixed(2)}€ / mes</span>
             </div>
             <div class="price-row-compare">
@@ -172,7 +185,7 @@ function renderSubscriptions(subs) {
           </div>
 
           <div class="sub-saving-banner">
-            <i class="fa-solid fa-piggy-bank"></i> Ahorras hasta ${cheapest ? cheapest.saved_pct : 0}% (${sub.yearly_saving.toFixed(2)}€ al año)
+            <i class="fa-solid fa-piggy-bank"></i> Ahorras ${cheapest ? cheapest.saved_pct : 0}% (¡${sub.yearly_saving.toFixed(2)}€ al año!)
           </div>
 
           <div class="card-footer" style="padding-top: 1rem;">
@@ -210,6 +223,7 @@ function openSubscriptionModal(subId) {
         <div class="modal-meta">
           <span class="meta-chip score"><i class="fa-solid fa-bolt"></i> ${sub.category}</span>
           <span class="meta-chip"><i class="fa-solid fa-piggy-bank"></i> Ahorro Anual: ~${sub.yearly_saving.toFixed(2)}€</span>
+          <span class="meta-chip"><i class="fa-solid fa-arrows-rotate"></i> Actualizado: ${state.lastUpdated}</span>
         </div>
         <p class="modal-desc">${sub.notes}</p>
       </div>
@@ -246,12 +260,12 @@ function openSubscriptionModal(subId) {
         </thead>
         <tbody>
           ${(sub.regional_prices || []).map(r => `
-            <tr class="${r.region === cheapest.region && r.saved_pct > 0 ? 'cheapest-row' : ''} ${r.region === 'España' ? 'spain-row' : ''}">
+            <tr class="${r.region === cheapest.region && r.saved_pct > 0 ? 'cheapest-row' : ''} ${r.region.includes('España') ? 'spain-row' : ''}">
               <td>
                 <div class="region-cell">
                   <span class="flag-icon">${r.flag}</span>
                   <span>${r.region}</span>
-                  ${r.region === 'España' ? '<span style="font-size: 0.75rem; color: var(--accent-blue); font-weight: 700;">(Local)</span>' : ''}
+                  ${r.region.includes('España') ? '<span style="font-size: 0.75rem; color: var(--accent-blue); font-weight: 700;">(Oficial)</span>' : ''}
                 </div>
               </td>
               <td>${r.local_amount.toFixed(2)} ${r.currency} / mes</td>
@@ -297,7 +311,6 @@ async function fetchSuggestions(query) {
     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
     const items = await res.json();
 
-    // Comprobar también coincidencias en suscripciones
     const matchingSubs = state.subscriptions.filter(s => 
       s.name.toLowerCase().includes(query.toLowerCase()) || 
       s.category.toLowerCase().includes(query.toLowerCase())
@@ -305,7 +318,6 @@ async function fetchSuggestions(query) {
 
     let html = '';
 
-    // Añadir suscripciones al autocomplete
     matchingSubs.forEach(s => {
       html += `
         <div class="suggestion-item" onclick="openSubscriptionModal('${s.id}')">
@@ -321,7 +333,6 @@ async function fetchSuggestions(query) {
       `;
     });
 
-    // Añadir juegos
     if (items && items.length > 0) {
       items.slice(0, 5).forEach(item => {
         html += `

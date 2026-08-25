@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PixelSteam & Subscriptions Deals Server v1.1.0
-Self-hosted Global Regional Price Comparator for Games & Streaming Subscriptions.
+PixelGlobal Deals & Subscriptions Server v1.2.0
+Self-hosted Global Regional Price Comparator with Real-Time Daily Currency Auto-Updater.
 """
 
 import http.server
@@ -11,17 +11,20 @@ import urllib.parse
 import json
 import os
 import time
+import datetime
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 PORT = 8098
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+SUBS_FILE = os.path.join(BASE_DIR, "subscriptions.json")
 
 CACHE = {}
 CACHE_TTL = 3600  # 1 hora
+LAST_UPDATED = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
 
-# Tasas de cambio de divisas aproximadas a EUR
+# Tasas de cambio de divisas en vivo a EUR
 EXCHANGE_RATES = {
     "EUR": 1.0,
     "USD": 0.92,
@@ -51,135 +54,6 @@ REGIONS = [
     {"code": "us", "name": "Estados Unidos", "flag": "🇺🇸", "currency": "USD"}
 ]
 
-# Base de datos global de suscripciones digitales
-SUBSCRIPTIONS = [
-    {
-        "id": "netflix",
-        "name": "Netflix Premium (4K + 4 Pantallas)",
-        "category": "Streaming Vídeo",
-        "icon": "fa-brands fa-netflix",
-        "color": "#E50914",
-        "image": "https://assets.nflxext.com/ffe/siteui/vlv3/9c5457b8-9ab0-4a04-9fc1-e608d5670f1a/711a76a8-7f91-455b-9d41-477cfb8813a4/ES-es-20210719-popsignuptwoweeks-perspective_alpha_website_small.jpg",
-        "spain_price": 17.99,
-        "prices": [
-            {"region": "Pakistán", "flag": "🇵🇰", "currency": "PKR", "amount": 1100, "rate_key": "PKR"},
-            {"region": "Nigeria", "flag": "🇳🇬", "currency": "NGN", "amount": 5000, "rate_key": "NGN"},
-            {"region": "Egipto", "flag": "🇪🇬", "currency": "EGP", "amount": 250, "rate_key": "EGP"},
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 299.99, "rate_key": "TRY"},
-            {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 8999, "rate_key": "ARS"},
-            {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 649, "rate_key": "INR"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 55.90, "rate_key": "BRL"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 17.99, "rate_key": "EUR"}
-        ],
-        "notes": "Acceso a resolución 4K HDR y descargas en 6 dispositivos."
-    },
-    {
-        "id": "gamepass",
-        "name": "Xbox Game Pass Ultimate (PC + Xbox + Cloud)",
-        "category": "Videojuegos",
-        "icon": "fa-brands fa-xbox",
-        "color": "#107C10",
-        "image": "https://compass-ssl.xbox.com/assets/f0/cd/f0cd237c-3720-4a7b-83c3-d9faecb6cc44.jpg?n=Game-Pass-Ultimate_Sharing-Image_1920x1080.jpg",
-        "spain_price": 17.99,
-        "prices": [
-            {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 549, "rate_key": "INR"},
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 209, "rate_key": "TRY"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 49.99, "rate_key": "BRL"},
-            {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 9999, "rate_key": "ARS"},
-            {"region": "EE.UU.", "flag": "🇺🇸", "currency": "USD", "amount": 16.99, "rate_key": "USD"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 17.99, "rate_key": "EUR"}
-        ],
-        "notes": "Incluye cientos de juegos día 1, EA Play, multijugador online y juego en la nube."
-    },
-    {
-        "id": "youtube",
-        "name": "YouTube Premium (Sin Anuncios + Music)",
-        "category": "Streaming / Música",
-        "icon": "fa-brands fa-youtube",
-        "color": "#FF0000",
-        "image": "https://www.gstatic.com/youtube/img/promos/growth/ytp_full_social_banner_1920x1080.png",
-        "spain_price": 13.99,
-        "prices": [
-            {"region": "Ucrania", "flag": "🇺🇦", "currency": "UAH", "amount": 99, "rate_key": "UAH"},
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 79.99, "rate_key": "TRY"},
-            {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 149, "rate_key": "INR"},
-            {"region": "Filipinas", "flag": "🇵🇭", "currency": "PHP", "amount": 159, "rate_key": "PHP"},
-            {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 3499, "rate_key": "ARS"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 24.90, "rate_key": "BRL"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 13.99, "rate_key": "EUR"}
-        ],
-        "notes": "Cero anuncios en todos los vídeos de YouTube, reproducción en segundo plano y YouTube Music Premium."
-    },
-    {
-        "id": "spotify",
-        "name": "Spotify Premium Individual",
-        "category": "Música",
-        "icon": "fa-brands fa-spotify",
-        "color": "#1DB954",
-        "image": "https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png",
-        "spain_price": 10.99,
-        "prices": [
-            {"region": "Pakistán", "flag": "🇵🇰", "currency": "PKR", "amount": 349, "rate_key": "PKR"},
-            {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 119, "rate_key": "INR"},
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 59.99, "rate_key": "TRY"},
-            {"region": "Filipinas", "flag": "🇵🇭", "currency": "PHP", "amount": 149, "rate_key": "PHP"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 21.90, "rate_key": "BRL"},
-            {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 2499, "rate_key": "ARS"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 10.99, "rate_key": "EUR"}
-        ],
-        "notes": "Música sin anuncios a máxima calidad (320kbps) y modo offline ilimitado."
-    },
-    {
-        "id": "disney",
-        "name": "Disney+ Premium (4K UHD)",
-        "category": "Streaming Vídeo",
-        "icon": "fa-solid fa-wand-magic-sparkles",
-        "color": "#113CCF",
-        "image": "https://static-assets.bamgrid.com/product/disneyplus/images/share-default.14fadd993578b3f1718d16bf63763ff8.png",
-        "spain_price": 11.99,
-        "prices": [
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 164.99, "rate_key": "TRY"},
-            {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 299, "rate_key": "INR"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 43.90, "rate_key": "BRL"},
-            {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 7399, "rate_key": "ARS"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 11.99, "rate_key": "EUR"}
-        ],
-        "notes": "Contenido de Disney, Pixar, Marvel, Star Wars, National Geographic y Star en 4K."
-    },
-    {
-        "id": "crunchyroll",
-        "name": "Crunchyroll Mega Fan",
-        "category": "Anime",
-        "icon": "fa-solid fa-play",
-        "color": "#F47521",
-        "image": "https://images.ctfassets.net/4cd45et68cgf/7xG4sZq347mZ7mN5YyW7fH/cf26802e071c778fa81e626e84db81d6/crunchyroll-brand-banner.jpg",
-        "spain_price": 6.49,
-        "prices": [
-            {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 1499, "rate_key": "ARS"},
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 49.99, "rate_key": "TRY"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 19.99, "rate_key": "BRL"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 6.49, "rate_key": "EUR"}
-        ],
-        "notes": "Todos los animes en simulcast con Japón, sin anuncios, descargas y 4 dispositivos simultáneos."
-    },
-    {
-        "id": "chatgpt",
-        "name": "ChatGPT Plus (GPT-4o & Canvas)",
-        "category": "Inteligencia Artificial",
-        "icon": "fa-solid fa-robot",
-        "color": "#10A37F",
-        "image": "https://images.openai.com/blob/8b965f32-6a75-4302-b2d9-1c9f8095b341/chatgpt-share-og.png",
-        "spain_price": 22.99,
-        "prices": [
-            {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 499.99, "rate_key": "TRY"},
-            {"region": "EE.UU.", "flag": "🇺🇸", "currency": "USD", "amount": 20.00, "rate_key": "USD"},
-            {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 99.90, "rate_key": "BRL"},
-            {"region": "España", "flag": "🇪🇸", "currency": "EUR", "amount": 22.99, "rate_key": "EUR"}
-        ],
-        "notes": "Acceso ilimitado a GPT-4o, generación de imágenes con DALL-E 3 y modo de voz avanzado."
-    }
-]
-
 def fetch_json(url):
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -192,37 +66,61 @@ def fetch_json(url):
         return None
 
 def update_exchange_rates():
-    global EXCHANGE_RATES
+    """Actualiza tasas de cambio en vivo cada día."""
+    global EXCHANGE_RATES, LAST_UPDATED
     try:
         data = fetch_json("https://open.er-api.com/v6/latest/EUR")
         if data and "rates" in data:
             rates = data["rates"]
-            for curr in EXCHANGE_RATES.keys():
+            for curr in list(EXCHANGE_RATES.keys()):
                 if curr in rates and rates[curr] > 0:
                     EXCHANGE_RATES[curr] = round(1.0 / rates[curr], 6)
-            print("[+] Tasas de divisas en vivo actualizadas con éxito.")
+            LAST_UPDATED = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+            print(f"[+] Tasas de divisas en vivo actualizadas con éxito ({LAST_UPDATED}).")
     except Exception as e:
-        print(f"[!] Tasas fijas en memoria: {e}")
+        print(f"[!] Fallback a tasas base: {e}")
 
+# Hilo en segundo plano para actualización diaria continua cada 6 horas
+def background_daily_updater():
+    while True:
+        time.sleep(21600)  # Cada 6 horas
+        print("[+] Ejecutando actualización periódica de tasas...")
+        update_exchange_rates()
+
+updater_thread = threading.Thread(target=background_daily_updater, daemon=True)
+updater_thread.start()
+
+# Primera actualización
 update_exchange_rates()
 
-def get_processed_subscriptions():
-    results = []
-    for sub in SUBSCRIPTIONS:
-        regional_list = []
-        spain_price = sub["spain_price"]
+def load_subscriptions_data():
+    if os.path.exists(SUBS_FILE):
+        try:
+            with open(SUBS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[!] Error leyendo {SUBS_FILE}: {e}")
+    return []
 
-        for p in sub["prices"]:
-            rate = EXCHANGE_RATES.get(p["rate_key"], 1.0)
-            eur_price = round(p["amount"] * rate, 2)
+def get_processed_subscriptions():
+    raw_subs = load_subscriptions_data()
+    results = []
+
+    for sub in raw_subs:
+        regional_list = []
+        spain_price = sub.get("spain_price", 19.99)
+
+        for p in sub.get("prices", []):
+            rate = EXCHANGE_RATES.get(p.get("rate_key", "EUR"), 1.0)
+            eur_price = round(p.get("amount", 0) * rate, 2)
             saved_eur = round(max(0, spain_price - eur_price), 2)
             saved_pct = int(round((saved_eur / spain_price) * 100)) if spain_price > 0 else 0
 
             regional_list.append({
-                "region": p["region"],
-                "flag": p["flag"],
-                "currency": p["currency"],
-                "local_amount": p["amount"],
+                "region": p.get("region"),
+                "flag": p.get("flag"),
+                "currency": p.get("currency"),
+                "local_amount": p.get("amount"),
                 "eur_price": eur_price,
                 "saved_eur": saved_eur,
                 "saved_pct": saved_pct
@@ -234,19 +132,23 @@ def get_processed_subscriptions():
         yearly_saving = round(cheapest["saved_eur"] * 12, 2) if cheapest else 0
 
         results.append({
-            "id": sub["id"],
-            "name": sub["name"],
-            "category": sub["category"],
-            "icon": sub["icon"],
-            "color": sub["color"],
-            "image": sub["image"],
+            "id": sub.get("id"),
+            "name": sub.get("name"),
+            "category": sub.get("category"),
+            "icon": sub.get("icon"),
+            "color": sub.get("color"),
+            "image": sub.get("image"),
             "spain_price": spain_price,
-            "notes": sub["notes"],
+            "notes": sub.get("notes"),
             "cheapest_region": cheapest,
             "yearly_saving": yearly_saving,
             "regional_prices": regional_list
         })
-    return results
+
+    return {
+        "last_updated": LAST_UPDATED,
+        "subscriptions": results
+    }
 
 def search_steam_games(query):
     cache_key = f"search_{query.lower()}"
@@ -447,8 +349,13 @@ class MainRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(deals)
 
         elif path == "/api/subscriptions":
-            subs = get_processed_subscriptions()
-            self.send_json(subs)
+            subs_data = get_processed_subscriptions()
+            self.send_json(subs_data)
+
+        elif path == "/api/subscriptions/refresh":
+            update_exchange_rates()
+            subs_data = get_processed_subscriptions()
+            self.send_json(subs_data)
 
         elif path == "/api/rates":
             self.send_json(EXCHANGE_RATES)
@@ -468,8 +375,9 @@ class MainRequestHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     os.makedirs(STATIC_DIR, exist_ok=True)
     print(f"==================================================")
-    print(f"🎮 PixelGlobal Deals & Subscriptions Server v1.1.0")
+    print(f"🎮 PixelGlobal Deals & Subscriptions Server v1.2.0")
     print(f"📡 Escuchando en: http://0.0.0.0:{PORT}")
+    print(f"🔄 Auto-Actualizador Diario en Tiempo Real Activo")
     print(f"💾 Servidor Microserver Pixel 6a")
     print(f"==================================================")
     

@@ -1,13 +1,12 @@
 /* =========================================================
-   PixelSubs Pro - Stylesheet v2.0
-   Modern Dark Cyberpunk Design System
+   PixelSubs Pro - Stylesheet v2.3
    ========================================================= */
 
 :root {
   --bg-main: #0a0e17;
   --bg-card: #111827;
   --bg-card-hover: #172033;
-  --bg-glass: rgba(17, 24, 39, 0.85);
+  --bg-glass: rgba(17, 24, 39, 0.88);
   --bg-surface: #1e293b;
   --border-color: rgba(255, 255, 255, 0.08);
   --border-color-hover: rgba(59, 130, 246, 0.4);
@@ -59,7 +58,6 @@ body {
   background-attachment: fixed;
 }
 
-/* Utilitarios */
 .text-gold { color: var(--accent-gold); }
 .text-green { color: var(--accent-green); }
 .text-cyan { color: var(--accent-cyan); }
@@ -441,7 +439,7 @@ body {
   align-items: flex-end;
   padding: 1rem;
 }
-.sub-header-banner img {
+.sub-header-banner img.bg-banner {
   position: absolute;
   top: 0;
   left: 0;
@@ -452,7 +450,7 @@ body {
   filter: blur(2px);
   transition: var(--transition);
 }
-.sub-card:hover .sub-header-banner img {
+.sub-card:hover .sub-header-banner img.bg-banner {
   opacity: 0.28;
   transform: scale(1.05);
 }
@@ -460,7 +458,7 @@ body {
   position: absolute;
   top: 0.85rem;
   right: 0.85rem;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-color);
   font-size: 0.72rem;
@@ -469,17 +467,30 @@ body {
   border-radius: var(--radius-full);
   color: var(--text-muted);
 }
+
+/* Authentic Brand Logo Tile - HIGH CONTRAST & VISIBILITY */
 .sub-icon-badge {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.7rem;
-  color: #fff;
-  box-shadow: var(--shadow-md);
+  background: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   z-index: 2;
+  padding: 6px;
+  transition: var(--transition);
+}
+.sub-card:hover .sub-icon-badge {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+.sub-icon-badge svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* Favorite & Basket Buttons */
@@ -965,7 +976,6 @@ body {
   color: var(--accent-cyan);
 }
 
-/* Responsive */
 @media (max-width: 868px) {
   .header-container {
     flex-wrap: wrap;

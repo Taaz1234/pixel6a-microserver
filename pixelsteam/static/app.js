@@ -266,7 +266,7 @@ function openDetailModal(subId) {
 
   detailModalContent.innerHTML = `
     <div class="modal-header-hero">
-      <div style="width: 85px; height: 85px; border-radius: var(--radius-md); background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); flex-shrink: 0; padding: 0.5rem; border: 2px solid rgba(255, 255, 255, 0.2);">
+      <div class="modal-logo-badge">
         ${brandImg}
       </div>
       <div class="modal-info">

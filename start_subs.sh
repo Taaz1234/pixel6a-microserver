@@ -2,7 +2,6 @@
 APP_DIR="/data/pixelserver/pixelsteam"
 
 pkill -f "pixelsteam/server.py" 2>/dev/null || true
-pkill -f "python3.*server.py" 2>/dev/null || true
 sleep 1
 
 export LD_LIBRARY_PATH=/data/data/com.termux/files/usr/lib:$LD_LIBRARY_PATH

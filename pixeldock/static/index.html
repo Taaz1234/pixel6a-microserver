@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixelDock Pro &bull; Orquestador y Panel de Control de Microservicios</title>
+  
+  <!-- Google Fonts & Font Awesome 6 Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header Principal -->
+  <header class="dock-header">
+    <div class="header-container">
+      <div class="brand-box">
+        <div class="brand-icon">
+          <i class="fa-solid fa-cubes-stacked"></i>
+        </div>
+        <div class="brand-titles">
+          <div class="brand-name">PixelDock <span class="badge-pro">PRO</span></div>
+          <div class="brand-sub">Orquestador de Microservicios &bull; Google Pixel 6a</div>
+        </div>
+      </div>
+
+      <!-- Quick Telemetry Chips -->
+      <div class="header-telemetry">
+        <div class="telemetry-chip" id="cpuChip">
+          <i class="fa-solid fa-microchip text-cyan"></i>
+          <span>CPU: <strong id="cpuLoadVal">--%</strong></span>
+        </div>
+        <div class="telemetry-chip" id="ramChip">
+          <i class="fa-solid fa-memory text-emerald"></i>
+          <span>RAM: <strong id="ramUsedVal">-- / -- MB</strong></span>
+        </div>
+        <div class="telemetry-chip" id="tempChip">
+          <i class="fa-solid fa-fire text-gold"></i>
+          <span>Temp: <strong id="batteryTempVal">--°C</strong></span>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <button class="action-btn terminal-btn" onclick="toggleTerminal()">
+          <i class="fa-solid fa-terminal text-cyan"></i>
+          <span>Terminal Web</span>
+        </button>
+        <button class="action-btn refresh-btn" onclick="fetchServices(true)" title="Refrescar estado">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="dock-main">
+    <!-- Top Stats Overview Cards -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-box bg-emerald">
+          <i class="fa-solid fa-play"></i>
+        </div>
+        <div class="stat-details">
+          <span class="stat-lbl">Servicios Activos</span>
+          <h3 class="stat-val text-emerald" id="runningCount">0</h3>
+        </div>
+        <div class="stat-indicator pulse-green"></div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-box bg-rose">
+          <i class="fa-solid fa-stop"></i>
+        </div>
+        <div class="stat-details">
+          <span class="stat-lbl">Servicios Detenidos</span>
+          <h3 class="stat-val text-rose" id="stoppedCount">0</h3>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-box bg-cyan">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div class="stat-details">
+          <span class="stat-lbl">Total Microservicios</span>
+          <h3 class="stat-val text-cyan" id="totalCount">8</h3>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-box bg-purple">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="stat-details">
+          <span class="stat-lbl">Arquitectura SoC</span>
+          <h3 class="stat-val" style="font-size: 1.1rem;">Google Tensor</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Filter & Search Bar -->
+    <section class="controls-section">
+      <div class="category-pills" id="categoryFilters">
+        <button class="cat-btn active" data-cat="all" onclick="filterCategory('all')">
+          <i class="fa-solid fa-border-all"></i> Todos (<span id="allCount">0</span>)
+        </button>
+        <button class="cat-btn" data-cat="Red & Seguridad" onclick="filterCategory('Red & Seguridad')">
+          <i class="fa-solid fa-shield-halved"></i> Red & Seguridad
+        </button>
+        <button class="cat-btn" data-cat="Aplicaciones Web" onclick="filterCategory('Aplicaciones Web')">
+          <i class="fa-solid fa-globe"></i> Apps Web
+        </button>
+        <button class="cat-btn" data-cat="Multimedia & Cine" onclick="filterCategory('Multimedia & Cine')">
+          <i class="fa-solid fa-film"></i> Multimedia
+        </button>
+        <button class="cat-btn" data-cat="Gaming & Servidores" onclick="filterCategory('Gaming & Servidores')">
+          <i class="fa-solid fa-gamepad"></i> Gaming
+        </button>
+      </div>
+
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchInput" placeholder="Filtrar servicios (nombre, puerto, categoría)..." oninput="handleSearch()">
+      </div>
+    </section>
+
+    <!-- Services Grid -->
+    <section class="services-container">
+      <div class="services-grid" id="servicesGrid">
+        <!-- Inyectado dinámicamente -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Visor de Logs en Vivo -->
+  <div class="modal-overlay" id="logsModal">
+    <div class="modal-card log-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <i class="fa-solid fa-terminal text-cyan"></i>
+          <div>
+            <h3 id="logModalTitle">Logs del Servicio</h3>
+            <span class="modal-sub" id="logModalSub">Mostrando últimas líneas de log</span>
+          </div>
+        </div>
+        <div class="modal-header-actions">
+          <button class="icon-action-btn" onclick="refreshCurrentLogs()" title="Refrescar logs"><i class="fa-solid fa-arrows-rotate"></i></button>
+          <button class="icon-action-btn close-modal" onclick="closeLogsModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <pre class="logs-console" id="logsConsole">Cargando registros...</pre>
+      </div>
+      <div class="modal-footer">
+        <div class="log-status-info"><i class="fa-solid fa-circle-dot text-emerald"></i> Streaming de logs activo</div>
+        <button class="action-pill-btn" onclick="clearConsoleView()"><i class="fa-solid fa-trash-can"></i> Limpiar Vista</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal Web Flotante / Drawer -->
+  <div class="terminal-drawer" id="terminalDrawer">
+    <div class="terminal-drawer-header">
+      <div class="term-title"><i class="fa-solid fa-terminal text-cyan"></i> Consola Root del Microservidor (Pixel 6a)</div>
+      <button class="term-close-btn" onclick="toggleTerminal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="terminal-drawer-body">
+      <pre class="terminal-output" id="terminalOutput">PixelDock Root Console [Android Linux AArch64]
+Escribe cualquier comando de sistema (ej: 'ps', 'df -h', 'uptime', 'netstat -tulpn', 'top -n 1') y pulsa Enter.
+</pre>
+      <form class="terminal-input-form" onsubmit="executeTerminalCommand(event)">
+        <span class="term-prompt">root@pixel6a:~#</span>
+        <input type="text" id="termCmdInput" placeholder="comando..." autocomplete="off">
+        <button type="submit" class="term-submit-btn"><i class="fa-solid fa-arrow-right"></i></button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notificaciones -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Footer -->
+  <footer class="dock-footer">
+    <div class="footer-content">
+      <span><i class="fa-solid fa-cubes-stacked text-cyan"></i> <strong>PixelDock Pro v1.0</strong> &bull; Gestor de Hosting y Microservicios</span>
+      <span>Alojado en Google Pixel 6a (Puerto 8088)</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

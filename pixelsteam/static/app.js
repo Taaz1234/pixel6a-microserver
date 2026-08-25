@@ -1,188 +1,220 @@
 /* =========================================================
-   PixelGlobal Deals - Frontend Logic & Interactivity v1.3
+   PixelSubs Pro - Logic & Interactivity v2.0
    ========================================================= */
 
 const state = {
-  currentTab: 'subs',
-  deals: [],
   subscriptions: [],
+  currentCategory: 'all',
+  currentSort: 'saving_eur',
+  searchQuery: '',
   lastUpdated: '',
-  favorites: JSON.parse(localStorage.getItem('pixelsteam_favs') || '[]'),
-  searchTimeout: null
+  favorites: JSON.parse(localStorage.getItem('pixelsubs_favs') || '[]'),
+  calcSelected: JSON.parse(localStorage.getItem('pixelsubs_calc') || '["gamepass", "netflix", "spotify", "youtube", "chatgpt"]'),
 };
 
 // DOM Elements
 const searchInput = document.getElementById('searchInput');
-const searchSubmitBtn = document.getElementById('searchSubmitBtn');
 const clearSearchBtn = document.getElementById('clearSearchBtn');
-const searchSuggestions = document.getElementById('searchSuggestions');
-const gamesGrid = document.getElementById('gamesGrid');
+const subsGrid = document.getElementById('subsGrid');
 const loader = document.getElementById('loader');
-const sectionTitle = document.getElementById('sectionTitle');
+const currentCategoryTitle = document.getElementById('currentCategoryTitle');
 const resultsCount = document.getElementById('resultsCount');
-const tabButtons = document.querySelectorAll('.tab-btn');
-const quickChips = document.querySelectorAll('.quick-chip');
+const totalSubsCount = document.getElementById('totalSubsCount');
 const favCountSpan = document.getElementById('favCount');
-const gameModal = document.getElementById('gameModal');
-const modalContent = document.getElementById('modalContent');
-const closeModalBtn = document.getElementById('closeModalBtn');
+const calcSelectedCountSpan = document.getElementById('calcSelectedCount');
+const sortSelect = document.getElementById('sortSelect');
+const bannerUpdated = document.getElementById('bannerUpdated');
+
+// Modals
+const detailModal = document.getElementById('detailModal');
+const detailModalContent = document.getElementById('detailModalContent');
+const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
+
+const calcModal = document.getElementById('calcModal');
+const closeCalcModalBtn = document.getElementById('closeCalcModalBtn');
+const calcItemsList = document.getElementById('calcItemsList');
+const calcTotalSpain = document.getElementById('calcTotalSpain');
+const calcTotalOpt = document.getElementById('calcTotalOpt');
+const calcTotalSaving = document.getElementById('calcTotalSaving');
+const calcTotalSavingPct = document.getElementById('calcTotalSavingPct');
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
-  updateFavCount();
-  loadSubscriptions();
   setupEventListeners();
+  loadSubscriptions();
+  updateHeaderBadges();
 });
 
-// Manejador ultra-robusto de imágenes de Steam con multi-fallback
-function handleSteamImgError(img, appid, name = 'Juego Steam') {
-  const step = parseInt(img.dataset.step || '0', 10);
-  
-  if (step === 0) {
-    img.dataset.step = '1';
-    img.src = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appid}/capsule_616x353.jpg`;
-  } else if (step === 1) {
-    img.dataset.step = '2';
-    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/header.jpg`;
-  } else if (step === 2) {
-    img.dataset.step = '3';
-    img.src = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/capsule_184x69.jpg`;
-  } else {
-    img.onerror = null;
-    // Placeholder estilizado SVG cyberpunk en caso de juego sin portada pública
-    img.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="460" height="215" viewBox="0 0 460 215"><rect width="100%" height="100%" fill="%23141b29"/><circle cx="230" cy="90" r="36" fill="%231a9fff" opacity="0.15"/><path d="M218 80h24M230 68v24M215 98h30" stroke="%231a9fff" stroke-width="3" stroke-linecap="round"/><text x="50%" y="150" font-family="sans-serif" font-size="16" font-weight="bold" fill="%2394a3b8" text-anchor="middle">${encodeURIComponent(name.substring(0, 28))}</text></svg>`;
-  }
-}
-
 function setupEventListeners() {
+  // Búsqueda en vivo
   searchInput.addEventListener('input', (e) => {
-    const val = e.target.value.trim();
-    clearSearchBtn.style.display = val ? 'block' : 'none';
-
-    clearTimeout(state.searchTimeout);
-    if (val.length >= 2) {
-      state.searchTimeout = setTimeout(() => fetchSuggestions(val), 300);
-    } else {
-      searchSuggestions.style.display = 'none';
-    }
-  });
-
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      executeSearch(searchInput.value.trim());
-    }
-  });
-
-  searchSubmitBtn.addEventListener('click', () => {
-    executeSearch(searchInput.value.trim());
+    state.searchQuery = e.target.value.trim().toLowerCase();
+    clearSearchBtn.style.display = state.searchQuery ? 'block' : 'none';
+    renderGrid();
   });
 
   clearSearchBtn.addEventListener('click', () => {
     searchInput.value = '';
+    state.searchQuery = '';
     clearSearchBtn.style.display = 'none';
-    searchSuggestions.style.display = 'none';
-    handleTabSwitch(state.currentTab);
+    renderGrid();
   });
 
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrapper')) {
-      searchSuggestions.style.display = 'none';
-    }
+  // Modal Closers
+  closeDetailModalBtn.addEventListener('click', closeDetailModal);
+  detailModal.addEventListener('click', (e) => {
+    if (e.target === detailModal) closeDetailModal();
   });
 
-  quickChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const mode = chip.dataset.mode;
-      const query = chip.dataset.query;
-
-      if (mode === 'subs') {
-        setActiveTab('subs');
-      } else if (query) {
-        searchInput.value = query;
-        clearSearchBtn.style.display = 'block';
-        executeSearch(query);
-      }
-    });
-  });
-
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      setActiveTab(tab);
-    });
-  });
-
-  closeModalBtn.addEventListener('click', closeModal);
-  gameModal.addEventListener('click', (e) => {
-    if (e.target === gameModal) closeModal();
+  closeCalcModalBtn.addEventListener('click', closeCalcModal);
+  calcModal.addEventListener('click', (e) => {
+    if (e.target === calcModal) closeCalcModal();
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') {
+      closeDetailModal();
+      closeCalcModal();
+    }
   });
 }
 
-function setActiveTab(tab) {
-  tabButtons.forEach(b => b.classList.remove('active'));
-  const target = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
-  if (target) target.classList.add('active');
-  state.currentTab = tab;
-  handleTabSwitch(tab);
-}
-
-function updateFavCount() {
+function updateHeaderBadges() {
   favCountSpan.textContent = state.favorites.length;
+  calcSelectedCountSpan.textContent = state.calcSelected.length;
 }
 
-// Cargar Suscripciones
+// Carga de Suscripciones desde el API
 async function loadSubscriptions(forceRefresh = false) {
   showLoader(true);
-  
   try {
     const url = forceRefresh ? '/api/subscriptions/refresh' : '/api/subscriptions';
     const res = await fetch(url);
     const data = await res.json();
-    
-    state.subscriptions = data.subscriptions || data;
+
+    state.subscriptions = data.subscriptions || [];
     state.lastUpdated = data.last_updated || 'Hoy';
 
-    sectionTitle.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.5rem;">
-        <span><i class="fa-solid fa-credit-card"></i> Suscripciones Oficiales 2026</span>
-        <button class="quick-chip" style="font-size: 0.75rem; color: var(--accent-green);" onclick="loadSubscriptions(true)" title="Forzar actualización de tasas de cambio">
-          <i class="fa-solid fa-arrows-rotate"></i> Actualizado: ${state.lastUpdated}
-        </button>
-      </div>
-    `;
+    bannerUpdated.innerHTML = `<i class="fa-solid fa-arrows-rotate text-green"></i> Actualizado: ${state.lastUpdated}`;
+    totalSubsCount.textContent = state.subscriptions.length;
 
-    renderSubscriptions(state.subscriptions);
-    resultsCount.textContent = `${state.subscriptions.length} plataformas comparadas en vivo`;
+    renderGrid();
+    updateCalculatorSummary();
   } catch (err) {
     console.error(err);
-    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar las suscripciones.</div>`;
+    subsGrid.innerHTML = `<div class="loader-container">Error al conectar con el microservidor.</div>`;
   } finally {
     showLoader(false);
   }
 }
 
-// Renderizar tarjetas de suscripciones
-function renderSubscriptions(subs) {
-  if (!subs || subs.length === 0) {
-    gamesGrid.innerHTML = `<p>No hay suscripciones disponibles.</p>`;
+async function forceRefreshRates() {
+  const btn = document.querySelector('.refresh-rates-btn');
+  if (btn) btn.style.transform = 'rotate(360deg)';
+  await loadSubscriptions(true);
+}
+
+// Filtrar Categoría
+function filterCategory(cat) {
+  state.currentCategory = cat;
+
+  // Actualizar botones de navegación
+  document.querySelectorAll('.cat-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.dataset.cat === cat);
+  });
+
+  const titles = {
+    all: '<i class="fa-solid fa-list-check"></i> Todas las Suscripciones',
+    Videojuegos: '<i class="fa-solid fa-gamepad text-green"></i> Videojuegos & Gaming',
+    'Cine & Series': '<i class="fa-solid fa-film text-cyan"></i> Cine & Series en Streaming',
+    'Música & Audio': '<i class="fa-solid fa-music text-gold"></i> Música & Podcasts HiFi',
+    'Inteligencia Artificial': '<i class="fa-solid fa-robot text-purple"></i> Inteligencia Artificial & Nube',
+    'Productividad & VPN': '<i class="fa-solid fa-shield-halved text-blue"></i> Productividad, Nube & VPN',
+    favorites: '<i class="fa-solid fa-star text-gold"></i> Mis Suscripciones Favoritas'
+  };
+
+  currentCategoryTitle.innerHTML = titles[cat] || `<i class="fa-solid fa-tag"></i> ${cat}`;
+  renderGrid();
+}
+
+// Ordenación
+function handleSortChange() {
+  state.currentSort = sortSelect.value;
+  renderGrid();
+}
+
+// Renderizado de Tarjetas
+function renderGrid() {
+  let filtered = [...state.subscriptions];
+
+  // Filtro de Categoría
+  if (state.currentCategory === 'favorites') {
+    filtered = filtered.filter(s => state.favorites.includes(s.id));
+  } else if (state.currentCategory !== 'all') {
+    filtered = filtered.filter(s => s.category === state.currentCategory);
+  }
+
+  // Filtro de Búsqueda
+  if (state.searchQuery) {
+    filtered = filtered.filter(s => 
+      s.name.toLowerCase().includes(state.searchQuery) ||
+      s.category.toLowerCase().includes(state.searchQuery) ||
+      s.notes.toLowerCase().includes(state.searchQuery)
+    );
+  }
+
+  // Ordenación
+  filtered.sort((a, b) => {
+    if (state.currentSort === 'saving_eur') {
+      return (b.yearly_saving || 0) - (a.yearly_saving || 0);
+    } else if (state.currentSort === 'saving_pct') {
+      const pctA = a.cheapest_region ? a.cheapest_region.saved_pct : 0;
+      const pctB = b.cheapest_region ? b.cheapest_region.saved_pct : 0;
+      return pctB - pctA;
+    } else if (state.currentSort === 'cheapest_price') {
+      const prA = a.cheapest_region ? a.cheapest_region.eur_price : a.spain_price;
+      const prB = b.cheapest_region ? b.cheapest_region.eur_price : b.spain_price;
+      return prA - prB;
+    } else if (state.currentSort === 'spain_price') {
+      return a.spain_price - b.spain_price;
+    } else if (state.currentSort === 'name') {
+      return a.name.localeCompare(b.name);
+    }
+    return 0;
+  });
+
+  resultsCount.textContent = `${filtered.length} servicios`;
+
+  if (filtered.length === 0) {
+    subsGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-dark);"></i>
+        <h3>No se encontraron suscripciones</h3>
+        <p style="margin-top: 0.5rem;">Prueba con otra categoría o término de búsqueda.</p>
+      </div>
+    `;
     return;
   }
 
-  gamesGrid.innerHTML = subs.map(sub => {
+  subsGrid.innerHTML = filtered.map(sub => {
     const cheapest = sub.cheapest_region;
-    const isFav = state.favorites.some(f => f.id === sub.id);
+    const isFav = state.favorites.includes(sub.id);
+    const inCalc = state.calcSelected.includes(sub.id);
 
     return `
-      <div class="sub-card" onclick="openSubscriptionModal('${sub.id}')">
-        <button class="fav-btn ${isFav ? 'active' : ''}" title="Guardar en favoritos" onclick="toggleFavorite(event, ${JSON.stringify(sub).replace(/"/g, '&quot;')})">
-          <i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>
-        </button>
+      <div class="sub-card" onclick="openDetailModal('${sub.id}')">
+        
+        <!-- Acciones Rápidas (Favorito & Calculadora) -->
+        <div class="card-top-actions">
+          <button class="icon-action-btn fav-btn ${isFav ? 'active' : ''}" title="Guardar en Favoritos" onclick="toggleFavorite(event, '${sub.id}')">
+            <i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>
+          </button>
+          <button class="icon-action-btn basket-btn ${inCalc ? 'active' : ''}" title="Añadir a Calculadora de Ahorro" onclick="toggleCalcItem(event, '${sub.id}')">
+            <i class="fa-solid fa-calculator"></i>
+          </button>
+        </div>
 
-        <div class="sub-header-banner" style="background: linear-gradient(135deg, ${sub.color}40, #141b29);">
+        <div class="sub-header-banner" style="background: linear-gradient(135deg, ${sub.color}45, #111827);">
           <img src="${sub.image}" alt="${sub.name}" onerror="this.style.display='none'">
           <span class="sub-badge-category">${sub.category}</span>
           <div class="sub-icon-badge" style="background: ${sub.color};">
@@ -199,17 +231,17 @@ function renderSubscriptions(subs) {
               <span class="val-spain">${sub.spain_price.toFixed(2)}€ / mes</span>
             </div>
             <div class="price-row-compare">
-              <span class="label">${cheapest ? cheapest.flag + ' ' + cheapest.region : 'Más barato'}:</span>
+              <span class="label">${cheapest ? cheapest.flag + ' ' + cheapest.region : 'Global'}:</span>
               <span class="val-cheapest">${cheapest ? cheapest.eur_price.toFixed(2) + '€ / mes' : '-'}</span>
             </div>
           </div>
 
           <div class="sub-saving-banner">
-            <i class="fa-solid fa-piggy-bank"></i> Ahorras ${cheapest ? cheapest.saved_pct : 0}% (¡${sub.yearly_saving.toFixed(2)}€ al año!)
+            <i class="fa-solid fa-piggy-bank"></i> Ahorras ${cheapest ? cheapest.saved_pct : 0}% (¡${sub.yearly_saving.toFixed(2)}€/año!)
           </div>
 
-          <div class="card-footer" style="padding-top: 1rem;">
-            <span style="font-size: 0.8rem; color: var(--text-muted);">${sub.notes.substring(0, 45)}...</span>
+          <div class="card-footer-box">
+            <span style="font-size: 0.78rem; color: var(--text-muted);">${(sub.notes || '').substring(0, 48)}...</span>
             <div class="card-btn">
               <span>Comparar</span>
               <i class="fa-solid fa-arrow-right"></i>
@@ -221,35 +253,31 @@ function renderSubscriptions(subs) {
   }).join('');
 }
 
-// Modal de Suscripción
-function openSubscriptionModal(subId) {
+// Modal de Detalle Comparativo por Países
+function openDetailModal(subId) {
   const sub = state.subscriptions.find(s => s.id === subId);
   if (!sub) return;
 
-  searchSuggestions.style.display = 'none';
-  gameModal.style.display = 'flex';
+  const cheapest = sub.cheapest_region;
+  detailModal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
-  const cheapest = sub.cheapest_region;
-
-  modalContent.innerHTML = `
-    <!-- Header Hero -->
+  detailModalContent.innerHTML = `
     <div class="modal-header-hero">
-      <div style="width: 120px; height: 120px; border-radius: var(--radius-md); background: ${sub.color}; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; color: white; box-shadow: var(--shadow-lg);">
+      <div style="width: 100px; height: 100px; border-radius: var(--radius-md); background: ${sub.color}; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; box-shadow: var(--shadow-md); flex-shrink: 0;">
         <i class="${sub.icon}"></i>
       </div>
       <div class="modal-info">
         <h3 class="modal-title">${sub.name}</h3>
         <div class="modal-meta">
-          <span class="meta-chip score"><i class="fa-solid fa-bolt"></i> ${sub.category}</span>
-          <span class="meta-chip"><i class="fa-solid fa-piggy-bank"></i> Ahorro Anual: ~${sub.yearly_saving.toFixed(2)}€</span>
+          <span class="meta-chip score"><i class="fa-solid fa-tag"></i> ${sub.category}</span>
+          <span class="meta-chip"><i class="fa-solid fa-piggy-bank text-green"></i> Ahorro: ~${sub.yearly_saving.toFixed(2)}€ / año</span>
           <span class="meta-chip"><i class="fa-solid fa-arrows-rotate"></i> Actualizado: ${state.lastUpdated}</span>
         </div>
         <p class="modal-desc">${sub.notes}</p>
       </div>
     </div>
 
-    <!-- Banner de Región Más Barata -->
     ${cheapest && cheapest.saved_pct > 0 ? `
       <div class="best-region-banner">
         <div class="best-region-left">
@@ -261,20 +289,19 @@ function openSubscriptionModal(subId) {
         </div>
         <div class="best-region-right">
           <div class="best-price-highlight">${cheapest.eur_price.toFixed(2)}€ <span style="font-size: 0.9rem; font-weight: normal;">/ mes</span></div>
-          <div class="savings-highlight">¡Ahorras un ${cheapest.saved_pct}% (${cheapest.saved_eur.toFixed(2)}€ menos cada mes)!</div>
+          <div class="savings-highlight">¡Ahorras un ${cheapest.saved_pct}% (${cheapest.saved_eur.toFixed(2)}€ menos cada mes vs España)!</div>
         </div>
       </div>
     ` : ''}
 
-    <!-- Tabla Comparativa de Precios por País -->
     <h4 class="table-header-title"><i class="fa-solid fa-earth-americas"></i> Comparativa de Precios Oficiales por País</h4>
     <div class="regional-table-wrapper">
       <table class="regional-table">
         <thead>
           <tr>
             <th>País / Región</th>
-            <th>Precio Local</th>
-            <th>Precio en EUR (€)</th>
+            <th>Precio Moneda Local</th>
+            <th>Precio Convertido en EUR (€)</th>
             <th>Ahorro vs España</th>
           </tr>
         </thead>
@@ -288,8 +315,8 @@ function openSubscriptionModal(subId) {
                   ${r.region.includes('España') ? '<span style="font-size: 0.75rem; color: var(--accent-blue); font-weight: 700;">(Oficial)</span>' : ''}
                 </div>
               </td>
-              <td>${r.local_amount.toFixed(2)} ${r.currency} / mes</td>
-              <td class="price-eur-cell" style="color: ${r.region === cheapest.region ? 'var(--accent-green)' : 'var(--text-main)'};">
+              <td style="font-family: var(--font-mono);">${r.local_amount.toFixed(2)} ${r.currency} / mes</td>
+              <td style="font-family: var(--font-mono); font-weight: 700; color: ${r.region === cheapest.region ? 'var(--accent-green)' : 'var(--text-main)'};">
                 ${r.eur_price.toFixed(2)}€ / mes
               </td>
               <td>
@@ -306,334 +333,105 @@ function openSubscriptionModal(subId) {
   `;
 }
 
-// Cargar ofertas de Steam
-async function loadFeaturedDeals() {
-  showLoader(true);
-  sectionTitle.innerHTML = '<i class="fa-solid fa-fire-flame-curved"></i> Top Chollos y Ofertas de Steam';
-  
-  try {
-    const res = await fetch('/api/deals');
-    const deals = await res.json();
-    state.deals = deals;
-    renderGames(deals);
-    resultsCount.textContent = `${deals.length} ofertas destacadas`;
-  } catch (err) {
-    console.error(err);
-    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar las ofertas de Steam.</div>`;
-  } finally {
-    showLoader(false);
-  }
+function closeDetailModal() {
+  detailModal.style.display = 'none';
+  document.body.style.overflow = 'auto';
 }
 
-// Sugerencias de búsqueda
-async function fetchSuggestions(query) {
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const items = await res.json();
-
-    const matchingSubs = state.subscriptions.filter(s => 
-      s.name.toLowerCase().includes(query.toLowerCase()) || 
-      s.category.toLowerCase().includes(query.toLowerCase())
-    );
-
-    let html = '';
-
-    matchingSubs.forEach(s => {
-      html += `
-        <div class="suggestion-item" onclick="openSubscriptionModal('${s.id}')">
-          <div style="width: 40px; height: 40px; border-radius: 4px; background: ${s.color}; display: flex; align-items: center; justify-content: center; color: white;">
-            <i class="${s.icon}"></i>
-          </div>
-          <div class="suggestion-info">
-            <div class="suggestion-name">${s.name}</div>
-            <div class="suggestion-price">Desde ${s.cheapest_region.eur_price.toFixed(2)}€/mes <span class="suggestion-badge">SUSCRIPCIÓN</span></div>
-          </div>
-          <i class="fa-solid fa-chevron-right" style="color: var(--text-dark); font-size: 0.8rem;"></i>
-        </div>
-      `;
-    });
-
-    if (items && items.length > 0) {
-      items.slice(0, 5).forEach(item => {
-        const imgSrc = item.header_image || item.image;
-        html += `
-          <div class="suggestion-item" onclick="openGameModal(${item.id})">
-            <img src="${imgSrc}" class="suggestion-img" alt="${item.name}" onerror="handleSteamImgError(this, ${item.id}, '${item.name.replace(/'/g, "\\'")}')">
-            <div class="suggestion-info">
-              <div class="suggestion-name">${item.name}</div>
-              <div class="suggestion-price">
-                ${item.price_es > 0 ? item.price_es.toFixed(2) + '€' : 'Gratis'}
-                ${item.discount > 0 ? `<span class="suggestion-badge">-${item.discount}%</span>` : ''}
-              </div>
-            </div>
-            <i class="fa-solid fa-chevron-right" style="color: var(--text-dark); font-size: 0.8rem;"></i>
-          </div>
-        `;
-      });
-    }
-
-    if (!html) {
-      searchSuggestions.style.display = 'none';
-      return;
-    }
-
-    searchSuggestions.innerHTML = html;
-    searchSuggestions.style.display = 'block';
-  } catch (err) {
-    console.error(err);
-  }
+// Calculadora de Cesta de Ahorro
+function openCalculatorModal() {
+  renderCalculatorList();
+  updateCalculatorSummary();
+  calcModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
-// Búsqueda completa
-async function executeSearch(query) {
-  if (!query) return;
-  searchSuggestions.style.display = 'none';
-  showLoader(true);
-  sectionTitle.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Resultados para "${query}"`;
-
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const results = await res.json();
-    renderGames(results);
-    resultsCount.textContent = `${results.length} juegos encontrados`;
-  } catch (err) {
-    console.error(err);
-    gamesGrid.innerHTML = `<div class="error-msg">Error al buscar.</div>`;
-  } finally {
-    showLoader(false);
-  }
+function closeCalcModal() {
+  calcModal.style.display = 'none';
+  document.body.style.overflow = 'auto';
 }
 
-// Renderizar tarjetas de juegos
-function renderGames(games) {
-  if (!games || games.length === 0) {
-    gamesGrid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-        <i class="fa-solid fa-gamepad" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-dark);"></i>
-        <h4>No se han encontrado juegos</h4>
-        <p>Prueba con otro término de búsqueda.</p>
-      </div>
-    `;
-    return;
-  }
-
-  gamesGrid.innerHTML = games.map(game => {
-    const isFav = state.favorites.some(f => f.id === game.id);
-    const finalPrice = game.final_price !== undefined ? game.final_price : game.price_es;
-    const origPrice = game.original_price !== undefined ? game.original_price : game.original_price_es;
-    const discount = game.discount || 0;
-    const isFree = finalPrice === 0;
-    const mainImg = game.header_image || game.image || `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
+function renderCalculatorList() {
+  calcItemsList.innerHTML = state.subscriptions.map(sub => {
+    const isSelected = state.calcSelected.includes(sub.id);
+    const cheapest = sub.cheapest_region;
 
     return `
-      <div class="game-card" onclick="openGameModal(${game.id})">
-        <button class="fav-btn ${isFav ? 'active' : ''}" title="Guardar en favoritos" onclick="toggleFavorite(event, ${JSON.stringify(game).replace(/"/g, '&quot;')})">
-          <i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>
-        </button>
-
-        <div class="card-img-wrapper">
-          <img src="${mainImg}" alt="${game.name}" loading="lazy" onerror="handleSteamImgError(this, ${game.id}, '${game.name.replace(/'/g, "\\'")}')">
-          ${discount > 0 ? `<div class="discount-badge">-${discount}%</div>` : ''}
+      <div class="calc-item-row ${isSelected ? 'selected' : ''}" onclick="toggleCalcRow('${sub.id}')">
+        <div class="calc-item-left">
+          <div class="calc-checkbox">
+            ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
+          </div>
+          <div>
+            <div class="calc-item-name">${sub.name}</div>
+            <div class="calc-item-category">${sub.category} &bull; España: ${sub.spain_price.toFixed(2)}€/mes</div>
+          </div>
         </div>
-
-        <div class="card-body">
-          <h4 class="card-title" title="${game.name}">${game.name}</h4>
-          <div style="display: flex; gap: 0.4rem; margin-top: 0.35rem; align-items: center; flex-wrap: wrap;">
-            ${game.metacritic ? `<span class="meta-chip score" style="font-size: 0.72rem; padding: 0.15rem 0.45rem;"><i class="fa-solid fa-award"></i> ${game.metacritic}</span>` : ''}
-            ${game.steam_rating ? `<span class="meta-chip" style="font-size: 0.72rem; padding: 0.15rem 0.45rem; background: rgba(30, 201, 151, 0.15); color: var(--accent-green);"><i class="fa-solid fa-thumbs-up"></i> ${game.steam_rating}%</span>` : ''}
-          </div>
-          
-          <div class="card-footer">
-            <div class="price-box">
-              ${discount > 0 && origPrice > 0 ? `<span class="orig-price">${origPrice.toFixed(2)}€</span>` : ''}
-              <span class="final-price ${isFree ? 'free' : ''}">
-                ${isFree ? 'GRATIS' : (finalPrice !== undefined ? finalPrice.toFixed(2) + '€' : 'Ver precio')}
-              </span>
-            </div>
-            <div class="card-btn">
-              <span>Comparar</span>
-              <i class="fa-solid fa-arrow-right"></i>
-            </div>
-          </div>
+        <div class="calc-item-price">
+          <div style="color: var(--accent-green); font-weight: 700;">${cheapest ? cheapest.eur_price.toFixed(2) + '€' : '-'}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${cheapest ? cheapest.flag + ' ' + cheapest.region : ''}</div>
         </div>
       </div>
     `;
   }).join('');
 }
 
-// Modal de detalles y comparador regional de juegos
-async function openGameModal(appid) {
-  searchSuggestions.style.display = 'none';
-  gameModal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-
-  modalContent.innerHTML = `
-    <div class="loader-container">
-      <div class="spinner"></div>
-      <p style="font-weight: 600;">Consultando precios en vivo en 9 regiones del mundo...</p>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">España 🇪🇸 &bull; Ucrania 🇺🇦 &bull; Kazajistán 🇰🇿 &bull; Turquía 🇹🇷 &bull; Argentina 🇦🇷 &bull; China 🇨🇳</p>
-    </div>
-  `;
-
-  try {
-    const res = await fetch(`/api/game/${appid}`);
-    const data = await res.json();
-
-    if (data.error) {
-      modalContent.innerHTML = `<div class="error-msg">${data.error}</div>`;
-      return;
-    }
-
-    renderGameModalContent(data);
-  } catch (err) {
-    console.error(err);
-    modalContent.innerHTML = `<div class="error-msg">Error al conectar con la API de Steam.</div>`;
+function toggleCalcRow(id) {
+  const idx = state.calcSelected.indexOf(id);
+  if (idx >= 0) {
+    state.calcSelected.splice(idx, 1);
+  } else {
+    state.calcSelected.push(id);
   }
+  localStorage.setItem('pixelsubs_calc', JSON.stringify(state.calcSelected));
+  updateHeaderBadges();
+  renderCalculatorList();
+  updateCalculatorSummary();
+  renderGrid();
 }
 
-function renderGameModalContent(game) {
-  const cheapest = game.cheapest_region;
-  const headerImg = game.header_image || `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-
-  modalContent.innerHTML = `
-    <div class="modal-header-hero">
-      <img src="${headerImg}" class="modal-poster" alt="${game.name}" onerror="handleSteamImgError(this, ${game.id}, '${game.name.replace(/'/g, "\\'")}')">
-      <div class="modal-info">
-        <h3 class="modal-title">${game.name}</h3>
-        <div class="modal-meta">
-          ${game.metacritic ? `<span class="meta-chip score"><i class="fa-solid fa-award"></i> Metacritic ${game.metacritic}</span>` : ''}
-          ${game.release_date ? `<span class="meta-chip"><i class="fa-regular fa-calendar"></i> ${game.release_date}</span>` : ''}
-          ${(game.genres || []).map(g => `<span class="meta-chip">${g}</span>`).join('')}
-        </div>
-        <p class="modal-desc">${game.short_description || 'Sin descripción disponible.'}</p>
-      </div>
-    </div>
-
-    ${cheapest && cheapest.saved_pct > 0 ? `
-      <div class="best-region-banner">
-        <div class="best-region-left">
-          <h4><i class="fa-solid fa-trophy"></i> Mejor Precio Global</h4>
-          <div class="best-region-name">
-            <span class="flag-icon">${cheapest.flag}</span>
-            <span>${cheapest.region}</span>
-          </div>
-        </div>
-        <div class="best-region-right">
-          <div class="best-price-highlight">${cheapest.price_eur.toFixed(2)}€</div>
-          <div class="savings-highlight">¡Ahorras un ${cheapest.saved_pct}% (${cheapest.saved_eur.toFixed(2)}€ menos que en España)!</div>
-        </div>
-      </div>
-    ` : ''}
-
-    <h4 class="table-header-title"><i class="fa-solid fa-earth-americas"></i> Comparativa de Precios Oficiales por Región</h4>
-    <div class="regional-table-wrapper">
-      <table class="regional-table">
-        <thead>
-          <tr>
-            <th>País / Región</th>
-            <th>Precio Local</th>
-            <th>Precio en EUR (€)</th>
-            <th>Ahorro vs España</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(game.regional_prices || []).map(r => `
-            <tr class="${r.code === cheapest.code && r.saved_pct > 0 ? 'cheapest-row' : ''} ${r.code === 'es' ? 'spain-row' : ''}">
-              <td>
-                <div class="region-cell">
-                  <span class="flag-icon">${r.flag}</span>
-                  <span>${r.region}</span>
-                  ${r.code === 'es' ? '<span style="font-size: 0.75rem; color: var(--accent-blue); font-weight: 700;">(Local)</span>' : ''}
-                </div>
-              </td>
-              <td>${r.is_free ? 'Gratis' : r.price_local.toFixed(2) + ' ' + r.currency}</td>
-              <td class="price-eur-cell" style="color: ${r.code === cheapest.code ? 'var(--accent-green)' : 'var(--text-main)'};">
-                ${r.is_free ? 'GRATIS' : r.price_eur.toFixed(2) + '€'}
-              </td>
-              <td>
-                ${r.saved_pct > 0 
-                  ? `<span class="savings-badge">-${r.saved_pct}% (${r.saved_eur.toFixed(2)}€)</span>` 
-                  : `<span class="savings-badge zero">-</span>`
-                }
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <a href="${game.steam_url}" target="_blank" class="steam-direct-btn">
-      <i class="fa-brands fa-steam"></i>
-      <span>Abrir en la Tienda Oficial de Steam</span>
-      <i class="fa-solid fa-arrow-up-right-from-square"></i>
-    </a>
-  `;
+function toggleCalcItem(e, id) {
+  e.stopPropagation();
+  toggleCalcRow(id);
 }
 
-function closeModal() {
-  gameModal.style.display = 'none';
-  document.body.style.overflow = 'auto';
+function updateCalculatorSummary() {
+  let spainYearlyTotal = 0;
+  let optYearlyTotal = 0;
+
+  state.calcSelected.forEach(id => {
+    const sub = state.subscriptions.find(s => s.id === id);
+    if (sub) {
+      spainYearlyTotal += sub.spain_yearly || (sub.spain_price * 12);
+      optYearlyTotal += sub.cheapest_yearly || (sub.cheapest_region ? sub.cheapest_region.eur_price * 12 : sub.spain_price * 12);
+    }
+  });
+
+  const savingYearly = Math.max(0, spainYearlyTotal - optYearlyTotal);
+  const savingPct = spainYearlyTotal > 0 ? Math.round((savingYearly / spainYearlyTotal) * 100) : 0;
+
+  calcTotalSpain.textContent = `${spainYearlyTotal.toFixed(2)}€ / año (${(spainYearlyTotal / 12).toFixed(2)}€/mes)`;
+  calcTotalOpt.textContent = `${optYearlyTotal.toFixed(2)}€ / año (${(optYearlyTotal / 12).toFixed(2)}€/mes)`;
+  calcTotalSaving.textContent = `${savingYearly.toFixed(2)}€ / año`;
+  calcTotalSavingPct.textContent = `¡Ahorras un ${savingPct}% neto al año (${(savingYearly / 12).toFixed(2)}€ al mes)!`;
+}
+
+// Favoritos
+function toggleFavorite(e, id) {
+  e.stopPropagation();
+  const idx = state.favorites.indexOf(id);
+  if (idx >= 0) {
+    state.favorites.splice(idx, 1);
+  } else {
+    state.favorites.push(id);
+  }
+  localStorage.setItem('pixelsubs_favs', JSON.stringify(state.favorites));
+  updateHeaderBadges();
+  renderGrid();
 }
 
 function showLoader(show) {
   loader.style.display = show ? 'block' : 'none';
-  if (show) gamesGrid.style.display = 'none';
-  else gamesGrid.style.display = 'grid';
-}
-
-// Favoritos
-function toggleFavorite(e, item) {
-  e.stopPropagation();
-  const idx = state.favorites.findIndex(f => f.id === item.id);
-  
-  if (idx >= 0) {
-    state.favorites.splice(idx, 1);
-  } else {
-    state.favorites.push(item);
-  }
-
-  localStorage.setItem('pixelsteam_favs', JSON.stringify(state.favorites));
-  updateFavCount();
-
-  const btn = e.currentTarget;
-  const isFav = idx < 0;
-  btn.classList.toggle('active', isFav);
-  btn.innerHTML = `<i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>`;
-
-  if (state.currentTab === 'favorites') {
-    handleTabSwitch('favorites');
-  }
-}
-
-// Cargar juegos por menos de 5€
-async function loadUnder5Deals() {
-  showLoader(true);
-  sectionTitle.innerHTML = '<i class="fa-solid fa-tags"></i> Joyas y Juegos por menos de 5€';
-
-  try {
-    const res = await fetch('/api/under5');
-    const under5 = await res.json();
-    renderGames(under5);
-    resultsCount.textContent = `${under5.length} juegos por menos de 5€ encontrados`;
-  } catch (err) {
-    console.error(err);
-    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar juegos de menos de 5€.</div>`;
-  } finally {
-    showLoader(false);
-  }
-}
-
-// Cambio de pestaña
-function handleTabSwitch(tab) {
-  if (tab === 'subs') {
-    loadSubscriptions();
-  } else if (tab === 'deals') {
-    loadFeaturedDeals();
-  } else if (tab === 'under5') {
-    loadUnder5Deals();
-  } else if (tab === 'favorites') {
-    sectionTitle.innerHTML = '<i class="fa-solid fa-star"></i> Mi Lista de Favoritos';
-    renderGames(state.favorites);
-    resultsCount.textContent = `${state.favorites.length} guardados`;
-  }
+  if (show) subsGrid.style.display = 'none';
+  else subsGrid.style.display = 'grid';
 }

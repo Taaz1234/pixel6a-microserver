@@ -1,0 +1,72 @@
+{
+  "admin_port": 8082,
+  "proxy_port": 8081,
+  "hosts": [
+    {
+      "id": "dock",
+      "domain": "dock.pixel.local",
+      "path_prefix": "/dock",
+      "target_url": "http://127.0.0.1:8088",
+      "name": "PixelDock Pro",
+      "ssl_enabled": true,
+      "websocket_enabled": true,
+      "cache_enabled": false,
+      "status": "active"
+    },
+    {
+      "id": "subs",
+      "domain": "subs.pixel.local",
+      "path_prefix": "/subs",
+      "target_url": "http://127.0.0.1:8098",
+      "name": "PixelSubs Pro",
+      "ssl_enabled": true,
+      "websocket_enabled": false,
+      "cache_enabled": false,
+      "status": "active"
+    },
+    {
+      "id": "pulse",
+      "domain": "pulse.pixel.local",
+      "path_prefix": "/pulse",
+      "target_url": "http://127.0.0.1:8080",
+      "name": "PixelPulse Dashboard",
+      "ssl_enabled": true,
+      "websocket_enabled": false,
+      "cache_enabled": false,
+      "status": "active"
+    },
+    {
+      "id": "files",
+      "domain": "files.pixel.local",
+      "path_prefix": "/files",
+      "target_url": "http://127.0.0.1:8090",
+      "name": "FileBrowser Cloud",
+      "ssl_enabled": true,
+      "websocket_enabled": true,
+      "cache_enabled": false,
+      "status": "active"
+    },
+    {
+      "id": "dns",
+      "domain": "dns.pixel.local",
+      "path_prefix": "/dns",
+      "target_url": "http://127.0.0.1:3000",
+      "name": "AdGuard Home",
+      "ssl_enabled": true,
+      "websocket_enabled": true,
+      "cache_enabled": false,
+      "status": "active"
+    },
+    {
+      "id": "cinema",
+      "domain": "cinema.pixel.local",
+      "path_prefix": "/cinema",
+      "target_url": "http://127.0.0.1:8095",
+      "name": "PixelCinema Pro",
+      "ssl_enabled": true,
+      "websocket_enabled": true,
+      "cache_enabled": false,
+      "status": "active"
+    }
+  ]
+}

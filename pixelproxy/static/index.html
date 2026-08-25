@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixelProxy &amp; PixelTunnel Pro &bull; Enrutador de Dominios &amp; Túneles Cloudflare</title>
+
+  <!-- Google Fonts & Font Awesome 6 Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- QRCode.js CDN for instant QR generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header Principal -->
+  <header class="proxy-header">
+    <div class="header-container">
+      <div class="brand-box">
+        <div class="brand-icon">
+          <i class="fa-solid fa-network-wired"></i>
+        </div>
+        <div class="brand-titles">
+          <div class="brand-name">PixelProxy <span class="badge-tunnel">&amp; PixelTunnel</span></div>
+          <div class="brand-sub">Enrutador de Tráfico Web &amp; Túneles Cloudflare HTTPS &bull; Pixel 6a</div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Pills -->
+      <div class="header-metrics">
+        <div class="metric-pill">
+          <i class="fa-solid fa-server text-cyan"></i>
+          <span>Hosts: <strong id="hostsCountVal">6</strong></span>
+        </div>
+        <div class="metric-pill">
+          <i class="fa-solid fa-cloud-bolt text-orange"></i>
+          <span>Túneles: <strong id="tunnelsCountVal">0</strong></span>
+        </div>
+        <div class="metric-pill">
+          <i class="fa-solid fa-bolt text-emerald"></i>
+          <span>Peticiones: <strong id="totalReqVal">0</strong></span>
+        </div>
+        <div class="metric-pill">
+          <i class="fa-solid fa-clock text-purple"></i>
+          <span>Latencia: <strong id="avgLatVal">0 ms</strong></span>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <button class="action-btn add-btn" onclick="openAddHostModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Nuevo Host</span>
+        </button>
+        <button class="action-btn tunnel-btn" onclick="switchMainTab('tunnels')">
+          <i class="fa-solid fa-cloud-bolt text-orange"></i>
+          <span>Crear Túnel</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs-bar">
+    <div class="nav-tabs-container">
+      <button class="tab-item active" id="tabHostsBtn" onclick="switchMainTab('hosts')">
+        <i class="fa-solid fa-diagram-project"></i> Proxy Hosts &amp; Dominios (<span id="hostsBadge">6</span>)
+      </button>
+      <button class="tab-item" id="tabTunnelsBtn" onclick="switchMainTab('tunnels')">
+        <i class="fa-solid fa-cloud-bolt text-orange"></i> PixelTunnel (Cloudflare HTTPS) (<span id="tunnelsBadge">0</span>)
+      </button>
+      <button class="tab-item" id="tabTrafficBtn" onclick="switchMainTab('traffic')">
+        <i class="fa-solid fa-chart-line text-emerald"></i> Registro de Tráfico en Vivo
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="proxy-main">
+    <!-- Pestaña 1: Proxy Hosts -->
+    <section id="hostsPane" class="tab-pane active">
+      <div class="pane-header">
+        <div>
+          <h3><i class="fa-solid fa-route text-cyan"></i> Enrutamiento de Dominios Locales</h3>
+          <p class="pane-desc">Mapeo de nombres de host y sub-rutas directas hacia los microservicios internos del Pixel 6a.</p>
+        </div>
+      </div>
+
+      <div class="hosts-table-card">
+        <table class="hosts-table">
+          <thead>
+            <tr>
+              <th>Servicio</th>
+              <th>Dominio Local</th>
+              <th>Sub-Ruta Proxy</th>
+              <th>Destino Interno</th>
+              <th>SSL</th>
+              <th>WebSockets</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="hostsTableBody">
+            <!-- Inyectado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Pestaña 2: PixelTunnel -->
+    <section id="tunnelsPane" class="tab-pane" style="display: none;">
+      <div class="pane-header">
+        <div>
+          <h3><i class="fa-solid fa-cloud-bolt text-orange"></i> Túneles Cloudflare Públicos (Acceso Seguro sin Abrir Puertos)</h3>
+          <p class="pane-desc">Expone cualquier microservicio a Internet con una URL HTTPS segura con cifrado SSL sin tocar tu router.</p>
+        </div>
+      </div>
+
+      <!-- Quick Launch Tunnel Box -->
+      <div class="tunnel-launcher-card">
+        <div class="launcher-header">
+          <i class="fa-solid fa-bolt-lightning text-gold"></i>
+          <h4>Lanzar Nuevo Túnel Público HTTPS</h4>
+        </div>
+        <form class="tunnel-form" onsubmit="launchTunnel(event)">
+          <div class="form-group">
+            <label>Seleccionar Servicio:</label>
+            <select id="tunnelServiceSelect">
+              <option value="pixelsubs:8098:PixelSubs Pro">PixelSubs Pro (Puerto 8098)</option>
+              <option value="pixeldock:8088:PixelDock Pro">PixelDock Pro (Puerto 8088)</option>
+              <option value="pixelpulse:8080:PixelPulse Dashboard">PixelPulse Dashboard (Puerto 8080)</option>
+              <option value="filebrowser:8090:FileBrowser Cloud">FileBrowser Cloud (Puerto 8090)</option>
+              <option value="adguard:3000:AdGuard Home">AdGuard Home (Puerto 3000)</option>
+              <option value="pixelcinema:8095:PixelCinema Pro">PixelCinema Pro (Puerto 8095)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Proveedor:</label>
+            <select id="tunnelProviderSelect">
+              <option value="cloudflare">Cloudflare Tunnel (trycloudflare.com)</option>
+              <option value="localtunnel">LocalTunnel (loca.lt)</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-create-tunnel">
+            <i class="fa-solid fa-rocket"></i> Generar Enlace Seguro
+          </button>
+        </form>
+      </div>
+
+      <!-- Active Tunnels Grid -->
+      <div class="active-tunnels-box">
+        <h4>Túneles Activos en Ejecución</h4>
+        <div class="tunnels-grid" id="tunnelsGrid">
+          <!-- Inyectado dinámicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Pestaña 3: Tráfico y Logs en Vivo -->
+    <section id="trafficPane" class="tab-pane" style="display: none;">
+      <div class="pane-header">
+        <div>
+          <h3><i class="fa-solid fa-chart-line text-emerald"></i> Monitor de Tráfico HTTP &amp; Access Logs</h3>
+          <p class="pane-desc">Inspección de peticiones entrantes, códigos de estado HTTP y tiempos de respuesta en milisegundos.</p>
+        </div>
+      </div>
+
+      <div class="traffic-stats-row">
+        <div class="t-stat-card">
+          <span class="t-stat-lbl">Respuestas 2xx / 304</span>
+          <h4 class="text-emerald" id="stat2xxVal">0</h4>
+        </div>
+        <div class="t-stat-card">
+          <span class="t-stat-lbl">Errores 4xx (Client)</span>
+          <h4 class="text-gold" id="stat4xxVal">0</h4>
+        </div>
+        <div class="t-stat-card">
+          <span class="t-stat-lbl">Errores 5xx (Gateway)</span>
+          <h4 class="text-rose" id="stat5xxVal">0</h4>
+        </div>
+        <div class="t-stat-card">
+          <span class="t-stat-lbl">Latencia Promedio</span>
+          <h4 class="text-cyan" id="statAvgLatVal">0 ms</h4>
+        </div>
+      </div>
+
+      <div class="logs-table-card">
+        <table class="logs-table">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>IP Cliente</th>
+              <th>Método</th>
+              <th>Ruta Solicitada</th>
+              <th>Destino</th>
+              <th>Código HTTP</th>
+              <th>Latencia</th>
+            </tr>
+          </thead>
+          <tbody id="trafficLogsBody">
+            <!-- Inyectado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Añadir / Editar Host -->
+  <div class="modal-overlay" id="hostModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="hostModalTitle"><i class="fa-solid fa-network-wired text-cyan"></i> Añadir Nuevo Proxy Host</h3>
+        <button class="modal-close-btn" onclick="closeHostModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form class="modal-form" onsubmit="saveHostForm(event)">
+        <input type="hidden" id="hostIdInput">
+        <div class="form-field">
+          <label>Nombre del Servicio:</label>
+          <input type="text" id="hostNameInput" placeholder="Ej: Mi Nueva Web" required>
+        </div>
+        <div class="form-field">
+          <label>Dominio Virtual (Host):</label>
+          <input type="text" id="hostDomainInput" placeholder="Ej: web.pixel.local" required>
+        </div>
+        <div class="form-field">
+          <label>Sub-Ruta en Proxy:</label>
+          <input type="text" id="hostPathInput" placeholder="Ej: /web" required>
+        </div>
+        <div class="form-field">
+          <label>Destino Interno (URL completa):</label>
+          <input type="text" id="hostTargetInput" placeholder="Ej: http://127.0.0.1:8090" required>
+        </div>
+        <div class="form-checkboxes">
+          <label><input type="checkbox" id="hostSslInput" checked> Habilitar SSL Simulado (HTTPS)</label>
+          <label><input type="checkbox" id="hostWsInput"> Habilitar Soporte WebSockets</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeHostModal()">Cancelar</button>
+          <button type="submit" class="btn-save">Guardar Host</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal QR Code para Túnel Público -->
+  <div class="modal-overlay" id="qrModal">
+    <div class="modal-card qr-modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-qrcode text-cyan"></i> Enlace Público Seguro (Móvil / 5G)</h3>
+        <button class="modal-close-btn" onclick="closeQrModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="qr-modal-body">
+        <div id="qrcodeContainer" class="qr-box"></div>
+        <div class="qr-details">
+          <h4 id="qrServiceTitle">PixelSubs Pro</h4>
+          <p class="qr-sub">Escanea este código con la cámara de tu iPhone o móvil para entrar desde cualquier lugar del mundo sin estar conectado al Wi-Fi de tu casa.</p>
+          <div class="copy-url-box">
+            <input type="text" id="qrUrlInput" readonly>
+            <button class="copy-btn" onclick="copyQrUrl()"><i class="fa-solid fa-copy"></i> Copiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notificaciones -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Footer -->
+  <footer class="proxy-footer">
+    <div class="footer-content">
+      <span><i class="fa-solid fa-network-wired text-cyan"></i> <strong>PixelProxy &amp; PixelTunnel Pro v1.0</strong> &bull; Suite de Hosting &amp; Proxy</span>
+      <span>Alojado en Google Pixel 6a (Puerto 8082)</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

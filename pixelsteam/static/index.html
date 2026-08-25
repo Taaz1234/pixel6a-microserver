@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PixelSteam Deals | Comparador Global SteamDB</title>
-  <meta name="description" content="Comparador de precios de Steam en todo el mundo. Encuentra las mejores ofertas y ahorra hasta un 80% comparando precios regionales.">
+  <title>PixelGlobal Deals | Comparador Steam & Suscripciones</title>
+  <meta name="description" content="Comparador de precios globales de Steam y suscripciones digitales (Netflix, Game Pass, Spotify, YouTube Premium, Disney+). Ahorra hasta un 80% comparando regiones.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
@@ -16,14 +16,15 @@
   <header class="navbar">
     <div class="nav-container">
       <div class="logo-container">
-        <div class="logo-icon"><i class="fa-brands fa-steam"></i></div>
+        <div class="logo-icon"><i class="fa-solid fa-earth-americas"></i></div>
         <div class="logo-text">
-          <h1>Pixel<span>Steam</span></h1>
-          <span class="badge-pro">GLOBAL DB</span>
+          <h1>Pixel<span>Global</span> Deals</h1>
+          <span class="badge-pro">STEAM & SUBS</span>
         </div>
       </div>
       <div class="nav-stats">
-        <div class="stat-pill"><i class="fa-solid fa-earth-americas"></i> 9 Regiones</div>
+        <div class="stat-pill"><i class="fa-solid fa-gamepad"></i> SteamDB</div>
+        <div class="stat-pill"><i class="fa-solid fa-credit-card"></i> Suscripciones</div>
         <div class="stat-pill active"><i class="fa-solid fa-bolt"></i> En Vivo</div>
       </div>
     </div>
@@ -32,14 +33,14 @@
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-content">
-      <h2 class="hero-title">Encuentra el precio más bajo en <span class="gradient-text">todo el mundo</span></h2>
-      <p class="hero-subtitle">Compara precios oficiales de Steam en tiempo real entre España, Ucrania, Kazajistán, Turquía y más.</p>
+      <h2 class="hero-title">Ahorra hasta un <span class="gradient-text">80% en Juegos & Suscripciones</span></h2>
+      <p class="hero-subtitle">Compara en qué país es más barato Steam, Netflix, Xbox Game Pass, Spotify, YouTube Premium y Disney+.</p>
       
       <!-- Search Box -->
       <div class="search-wrapper">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="searchInput" placeholder="Buscar juego en Steam (ej: Elden Ring, GTA V, Cyberpunk, Rust...)" autocomplete="off">
+          <input type="text" id="searchInput" placeholder="Buscar juego o suscripción (ej: Elden Ring, Netflix, Game Pass, GTA V, Spotify...)" autocomplete="off">
           <button id="clearSearchBtn" class="clear-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
           <button id="searchSubmitBtn" class="search-btn"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
@@ -48,12 +49,12 @@
 
       <!-- Quick Chips -->
       <div class="quick-tags">
-        <span class="tag-label">Populares:</span>
+        <span class="tag-label">Acceso Rápido:</span>
+        <button class="quick-chip active-chip" data-mode="subs"><i class="fa-solid fa-credit-card"></i> Suscripciones</button>
         <button class="quick-chip" data-query="Elden Ring"><i class="fa-solid fa-fire"></i> Elden Ring</button>
         <button class="quick-chip" data-query="Cyberpunk 2077"><i class="fa-solid fa-microchip"></i> Cyberpunk</button>
         <button class="quick-chip" data-query="Grand Theft Auto V"><i class="fa-solid fa-car"></i> GTA V</button>
         <button class="quick-chip" data-query="Black Myth: Wukong"><i class="fa-solid fa-dragon"></i> Wukong</button>
-        <button class="quick-chip" data-query="Rust"><i class="fa-solid fa-hammer"></i> Rust</button>
       </div>
     </div>
   </section>
@@ -62,32 +63,33 @@
   <main class="main-container">
     <!-- Navegación de Pestañas -->
     <div class="tabs-nav">
-      <button class="tab-btn active" data-tab="deals"><i class="fa-solid fa-fire-flame-curved"></i> Top Chollos del Día</button>
-      <button class="tab-btn" data-tab="under5"><i class="fa-solid fa-tags"></i> Menos de 5€</button>
-      <button class="tab-btn" data-tab="favorites"><i class="fa-solid fa-star"></i> Mis Favoritos (<span id="favCount">0</span>)</button>
+      <button class="tab-btn active" data-tab="subs"><i class="fa-solid fa-credit-card"></i> 💳 Suscripciones Globales</button>
+      <button class="tab-btn" data-tab="deals"><i class="fa-solid fa-fire-flame-curved"></i> 🎮 Top Chollos Steam</button>
+      <button class="tab-btn" data-tab="under5"><i class="fa-solid fa-tags"></i> 💸 Menos de 5€</button>
+      <button class="tab-btn" data-tab="favorites"><i class="fa-solid fa-star"></i> ⭐ Mis Favoritos (<span id="favCount">0</span>)</button>
     </div>
 
-    <!-- Contenedor Dinámico de Resultados / Ofertas -->
+    <!-- Contenedor Dinámico de Resultados -->
     <section id="resultsSection" class="results-section">
       <div class="section-header">
-        <h3 id="sectionTitle"><i class="fa-solid fa-fire-flame-curved"></i> Ofertas Destacadas de Steam</h3>
-        <span id="resultsCount" class="results-count">Cargando ofertas...</span>
+        <h3 id="sectionTitle"><i class="fa-solid fa-credit-card"></i> Comparador de Suscripciones por Países</h3>
+        <span id="resultsCount" class="results-count">Cargando datos...</span>
       </div>
 
-      <!-- Grid de Juegos -->
+      <!-- Grid de Tarjetas (Juegos o Suscripciones) -->
       <div id="gamesGrid" class="games-grid">
-        <!-- Tarjetas dinámicas inyectadas por JS -->
+        <!-- Inyectado dinámicamente -->
       </div>
 
       <!-- Loader -->
       <div id="loader" class="loader-container" style="display: none;">
         <div class="spinner"></div>
-        <p>Consultando servidores de Steam en todas las regiones...</p>
+        <p>Consultando servidores globales en todas las regiones...</p>
       </div>
     </section>
   </main>
 
-  <!-- Modal de Detalles del Juego & Comparador Regional -->
+  <!-- Modal de Detalles del Juego / Suscripción & Comparador Regional -->
   <div id="gameModal" class="modal-backdrop" style="display: none;">
     <div class="modal-container">
       <button id="closeModalBtn" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
@@ -100,8 +102,8 @@
 
   <footer class="footer">
     <div class="footer-container">
-      <p>PixelSteam Deals &copy; 2026 &bull; Alojadado 24/7 en tu <strong>Google Pixel 6a Microserver</strong></p>
-      <p class="footer-sub">Datos oficiales obtenidos en tiempo real de la API de Steam / Valve Corporation.</p>
+      <p>PixelGlobal Deals &copy; 2026 &bull; Alojadado 24/7 en tu <strong>Google Pixel 6a Microserver</strong></p>
+      <p class="footer-sub">Conversión automática de divisas en tiempo real. Precios oficiales actualizados.</p>
     </div>
   </footer>
 

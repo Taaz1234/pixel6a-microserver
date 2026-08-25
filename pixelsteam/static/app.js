@@ -1,10 +1,11 @@
 /* =========================================================
-   PixelSteam Deals - Frontend Logic & Interactivity
+   PixelGlobal Deals - Frontend Logic & Interactivity
    ========================================================= */
 
 const state = {
-  currentTab: 'deals',
+  currentTab: 'subs',
   deals: [],
+  subscriptions: [],
   favorites: JSON.parse(localStorage.getItem('pixelsteam_favs') || '[]'),
   searchTimeout: null
 };
@@ -28,12 +29,11 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
   updateFavCount();
-  loadFeaturedDeals();
+  loadSubscriptions();
   setupEventListeners();
 });
 
 function setupEventListeners() {
-  // Búsqueda en vivo con debounce
   searchInput.addEventListener('input', (e) => {
     const val = e.target.value.trim();
     clearSearchBtn.style.display = val ? 'block' : 'none';
@@ -60,38 +60,37 @@ function setupEventListeners() {
     searchInput.value = '';
     clearSearchBtn.style.display = 'none';
     searchSuggestions.style.display = 'none';
-    if (state.currentTab === 'deals') loadFeaturedDeals();
+    handleTabSwitch(state.currentTab);
   });
 
-  // Cerrar sugerencias al hacer clic fuera
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-wrapper')) {
       searchSuggestions.style.display = 'none';
     }
   });
 
-  // Quick Chips
   quickChips.forEach(chip => {
     chip.addEventListener('click', () => {
-      const q = chip.dataset.query;
-      searchInput.value = q;
-      clearSearchBtn.style.display = 'block';
-      executeSearch(q);
+      const mode = chip.dataset.mode;
+      const query = chip.dataset.query;
+
+      if (mode === 'subs') {
+        setActiveTab('subs');
+      } else if (query) {
+        searchInput.value = query;
+        clearSearchBtn.style.display = 'block';
+        executeSearch(query);
+      }
     });
   });
 
-  // Tabs
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      tabButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
       const tab = btn.dataset.tab;
-      state.currentTab = tab;
-      handleTabSwitch(tab);
+      setActiveTab(tab);
     });
   });
 
-  // Modal Close
   closeModalBtn.addEventListener('click', closeModal);
   gameModal.addEventListener('click', (e) => {
     if (e.target === gameModal) closeModal();
@@ -102,11 +101,178 @@ function setupEventListeners() {
   });
 }
 
+function setActiveTab(tab) {
+  tabButtons.forEach(b => b.classList.remove('active'));
+  const target = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if (target) target.classList.add('active');
+  state.currentTab = tab;
+  handleTabSwitch(tab);
+}
+
 function updateFavCount() {
   favCountSpan.textContent = state.favorites.length;
 }
 
-// Cargar ofertas destacadas
+// Cargar Suscripciones
+async function loadSubscriptions() {
+  showLoader(true);
+  sectionTitle.innerHTML = '<i class="fa-solid fa-credit-card"></i> Comparativa Global de Suscripciones (Netflix, Game Pass, Spotify...)';
+  
+  try {
+    const res = await fetch('/api/subscriptions');
+    const subs = await res.json();
+    state.subscriptions = subs;
+    renderSubscriptions(subs);
+    resultsCount.textContent = `${subs.length} plataformas comparadas`;
+  } catch (err) {
+    console.error(err);
+    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar las suscripciones.</div>`;
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Renderizar tarjetas de suscripciones
+function renderSubscriptions(subs) {
+  if (!subs || subs.length === 0) {
+    gamesGrid.innerHTML = `<p>No hay suscripciones disponibles.</p>`;
+    return;
+  }
+
+  gamesGrid.innerHTML = subs.map(sub => {
+    const cheapest = sub.cheapest_region;
+    const isFav = state.favorites.some(f => f.id === sub.id);
+
+    return `
+      <div class="sub-card" onclick="openSubscriptionModal('${sub.id}')">
+        <button class="fav-btn ${isFav ? 'active' : ''}" title="Guardar en favoritos" onclick="toggleFavorite(event, ${JSON.stringify(sub).replace(/"/g, '&quot;')})">
+          <i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>
+        </button>
+
+        <div class="sub-header-banner" style="background: linear-gradient(135deg, ${sub.color}40, #141b29);">
+          <img src="${sub.image}" alt="${sub.name}">
+          <span class="sub-badge-category">${sub.category}</span>
+          <div class="sub-icon-badge" style="background: ${sub.color};">
+            <i class="${sub.icon}"></i>
+          </div>
+        </div>
+
+        <div class="sub-body">
+          <h4 class="sub-title">${sub.name}</h4>
+          
+          <div class="sub-price-comparison">
+            <div class="price-row-compare">
+              <span class="label">🇪🇸 Precio España:</span>
+              <span class="val-spain">${sub.spain_price.toFixed(2)}€ / mes</span>
+            </div>
+            <div class="price-row-compare">
+              <span class="label">${cheapest ? cheapest.flag + ' ' + cheapest.region : 'Más barato'}:</span>
+              <span class="val-cheapest">${cheapest ? cheapest.eur_price.toFixed(2) + '€ / mes' : '-'}</span>
+            </div>
+          </div>
+
+          <div class="sub-saving-banner">
+            <i class="fa-solid fa-piggy-bank"></i> Ahorras hasta ${cheapest ? cheapest.saved_pct : 0}% (${sub.yearly_saving.toFixed(2)}€ al año)
+          </div>
+
+          <div class="card-footer" style="padding-top: 1rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">${sub.notes.substring(0, 45)}...</span>
+            <div class="card-btn">
+              <span>Comparar</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Modal de Suscripción
+function openSubscriptionModal(subId) {
+  const sub = state.subscriptions.find(s => s.id === subId);
+  if (!sub) return;
+
+  searchSuggestions.style.display = 'none';
+  gameModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  const cheapest = sub.cheapest_region;
+
+  modalContent.innerHTML = `
+    <!-- Header Hero -->
+    <div class="modal-header-hero">
+      <div style="width: 120px; height: 120px; border-radius: var(--radius-md); background: ${sub.color}; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; color: white; box-shadow: var(--shadow-lg);">
+        <i class="${sub.icon}"></i>
+      </div>
+      <div class="modal-info">
+        <h3 class="modal-title">${sub.name}</h3>
+        <div class="modal-meta">
+          <span class="meta-chip score"><i class="fa-solid fa-bolt"></i> ${sub.category}</span>
+          <span class="meta-chip"><i class="fa-solid fa-piggy-bank"></i> Ahorro Anual: ~${sub.yearly_saving.toFixed(2)}€</span>
+        </div>
+        <p class="modal-desc">${sub.notes}</p>
+      </div>
+    </div>
+
+    <!-- Banner de Región Más Barata -->
+    ${cheapest && cheapest.saved_pct > 0 ? `
+      <div class="best-region-banner">
+        <div class="best-region-left">
+          <h4><i class="fa-solid fa-trophy"></i> Mejor Precio Global</h4>
+          <div class="best-region-name">
+            <span class="flag-icon">${cheapest.flag}</span>
+            <span>${cheapest.region}</span>
+          </div>
+        </div>
+        <div class="best-region-right">
+          <div class="best-price-highlight">${cheapest.eur_price.toFixed(2)}€ <span style="font-size: 0.9rem; font-weight: normal;">/ mes</span></div>
+          <div class="savings-highlight">¡Ahorras un ${cheapest.saved_pct}% (${cheapest.saved_eur.toFixed(2)}€ menos cada mes)!</div>
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- Tabla Comparativa de Precios por País -->
+    <h4 class="table-header-title"><i class="fa-solid fa-earth-americas"></i> Comparativa de Precios Oficiales por País</h4>
+    <div class="regional-table-wrapper">
+      <table class="regional-table">
+        <thead>
+          <tr>
+            <th>País / Región</th>
+            <th>Precio Local</th>
+            <th>Precio en EUR (€)</th>
+            <th>Ahorro vs España</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(sub.regional_prices || []).map(r => `
+            <tr class="${r.region === cheapest.region && r.saved_pct > 0 ? 'cheapest-row' : ''} ${r.region === 'España' ? 'spain-row' : ''}">
+              <td>
+                <div class="region-cell">
+                  <span class="flag-icon">${r.flag}</span>
+                  <span>${r.region}</span>
+                  ${r.region === 'España' ? '<span style="font-size: 0.75rem; color: var(--accent-blue); font-weight: 700;">(Local)</span>' : ''}
+                </div>
+              </td>
+              <td>${r.local_amount.toFixed(2)} ${r.currency} / mes</td>
+              <td class="price-eur-cell" style="color: ${r.region === cheapest.region ? 'var(--accent-green)' : 'var(--text-main)'};">
+                ${r.eur_price.toFixed(2)}€ / mes
+              </td>
+              <td>
+                ${r.saved_pct > 0 
+                  ? `<span class="savings-badge">-${r.saved_pct}% (-${r.saved_eur.toFixed(2)}€/mes)</span>` 
+                  : `<span class="savings-badge zero">-</span>`
+                }
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Cargar ofertas de Steam
 async function loadFeaturedDeals() {
   showLoader(true);
   sectionTitle.innerHTML = '<i class="fa-solid fa-fire-flame-curved"></i> Top Chollos y Ofertas de Steam';
@@ -119,7 +285,7 @@ async function loadFeaturedDeals() {
     resultsCount.textContent = `${deals.length} ofertas destacadas`;
   } catch (err) {
     console.error(err);
-    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar las ofertas de Steam. Inténtalo de nuevo.</div>`;
+    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar las ofertas de Steam.</div>`;
   } finally {
     showLoader(false);
   }
@@ -131,25 +297,55 @@ async function fetchSuggestions(query) {
     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
     const items = await res.json();
 
-    if (!items || items.length === 0) {
+    // Comprobar también coincidencias en suscripciones
+    const matchingSubs = state.subscriptions.filter(s => 
+      s.name.toLowerCase().includes(query.toLowerCase()) || 
+      s.category.toLowerCase().includes(query.toLowerCase())
+    );
+
+    let html = '';
+
+    // Añadir suscripciones al autocomplete
+    matchingSubs.forEach(s => {
+      html += `
+        <div class="suggestion-item" onclick="openSubscriptionModal('${s.id}')">
+          <div style="width: 40px; height: 40px; border-radius: 4px; background: ${s.color}; display: flex; align-items: center; justify-content: center; color: white;">
+            <i class="${s.icon}"></i>
+          </div>
+          <div class="suggestion-info">
+            <div class="suggestion-name">${s.name}</div>
+            <div class="suggestion-price">Desde ${s.cheapest_region.eur_price.toFixed(2)}€/mes <span class="suggestion-badge">SUSCRIPCIÓN</span></div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-dark); font-size: 0.8rem;"></i>
+        </div>
+      `;
+    });
+
+    // Añadir juegos
+    if (items && items.length > 0) {
+      items.slice(0, 5).forEach(item => {
+        html += `
+          <div class="suggestion-item" onclick="openGameModal(${item.id})">
+            <img src="${item.header_image}" class="suggestion-img" alt="${item.name}" onerror="this.src='${item.image}'">
+            <div class="suggestion-info">
+              <div class="suggestion-name">${item.name}</div>
+              <div class="suggestion-price">
+                ${item.price_es > 0 ? item.price_es.toFixed(2) + '€' : 'Gratis'}
+                ${item.discount > 0 ? `<span class="suggestion-badge">-${item.discount}%</span>` : ''}
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color: var(--text-dark); font-size: 0.8rem;"></i>
+          </div>
+        `;
+      });
+    }
+
+    if (!html) {
       searchSuggestions.style.display = 'none';
       return;
     }
 
-    searchSuggestions.innerHTML = items.slice(0, 6).map(item => `
-      <div class="suggestion-item" onclick="openGameModal(${item.id})">
-        <img src="${item.header_image}" class="suggestion-img" alt="${item.name}" onerror="this.src='${item.image}'">
-        <div class="suggestion-info">
-          <div class="suggestion-name">${item.name}</div>
-          <div class="suggestion-price">
-            ${item.price_es > 0 ? item.price_es.toFixed(2) + '€' : 'Gratis'}
-            ${item.discount > 0 ? `<span class="suggestion-badge">-${item.discount}%</span>` : ''}
-          </div>
-        </div>
-        <i class="fa-solid fa-chevron-right" style="color: var(--text-dark); font-size: 0.8rem;"></i>
-      </div>
-    `).join('');
-
+    searchSuggestions.innerHTML = html;
     searchSuggestions.style.display = 'block';
   } catch (err) {
     console.error(err);
@@ -170,7 +366,7 @@ async function executeSearch(query) {
     resultsCount.textContent = `${results.length} juegos encontrados`;
   } catch (err) {
     console.error(err);
-    gamesGrid.innerHTML = `<div class="error-msg">Error al buscar en Steam.</div>`;
+    gamesGrid.innerHTML = `<div class="error-msg">Error al buscar.</div>`;
   } finally {
     showLoader(false);
   }
@@ -228,7 +424,7 @@ function renderGames(games) {
   }).join('');
 }
 
-// Modal de detalles y comparador regional
+// Modal de detalles y comparador regional de juegos
 async function openGameModal(appid) {
   searchSuggestions.style.display = 'none';
   gameModal.style.display = 'flex';
@@ -251,19 +447,17 @@ async function openGameModal(appid) {
       return;
     }
 
-    renderModalContent(data);
+    renderGameModalContent(data);
   } catch (err) {
     console.error(err);
     modalContent.innerHTML = `<div class="error-msg">Error al conectar con la API de Steam.</div>`;
   }
 }
 
-function renderModalContent(game) {
+function renderGameModalContent(game) {
   const cheapest = game.cheapest_region;
-  const priceEs = game.price_es;
 
   modalContent.innerHTML = `
-    <!-- Header Hero -->
     <div class="modal-header-hero">
       <img src="${game.header_image}" class="modal-poster" alt="${game.name}">
       <div class="modal-info">
@@ -277,7 +471,6 @@ function renderModalContent(game) {
       </div>
     </div>
 
-    <!-- Banner de Región Más Barata -->
     ${cheapest && cheapest.saved_pct > 0 ? `
       <div class="best-region-banner">
         <div class="best-region-left">
@@ -294,7 +487,6 @@ function renderModalContent(game) {
       </div>
     ` : ''}
 
-    <!-- Tabla Comparativa de Precios Regionales -->
     <h4 class="table-header-title"><i class="fa-solid fa-earth-americas"></i> Comparativa de Precios Oficiales por Región</h4>
     <div class="regional-table-wrapper">
       <table class="regional-table">
@@ -332,7 +524,6 @@ function renderModalContent(game) {
       </table>
     </div>
 
-    <!-- Botón directo a Steam -->
     <a href="${game.steam_url}" target="_blank" class="steam-direct-btn">
       <i class="fa-brands fa-steam"></i>
       <span>Abrir en la Tienda Oficial de Steam</span>
@@ -353,20 +544,19 @@ function showLoader(show) {
 }
 
 // Favoritos
-function toggleFavorite(e, game) {
+function toggleFavorite(e, item) {
   e.stopPropagation();
-  const idx = state.favorites.findIndex(f => f.id === game.id);
+  const idx = state.favorites.findIndex(f => f.id === item.id);
   
   if (idx >= 0) {
     state.favorites.splice(idx, 1);
   } else {
-    state.favorites.push(game);
+    state.favorites.push(item);
   }
 
   localStorage.setItem('pixelsteam_favs', JSON.stringify(state.favorites));
   updateFavCount();
 
-  // Actualizar UI
   const btn = e.currentTarget;
   const isFav = idx < 0;
   btn.classList.toggle('active', isFav);
@@ -379,7 +569,9 @@ function toggleFavorite(e, game) {
 
 // Cambio de pestaña
 function handleTabSwitch(tab) {
-  if (tab === 'deals') {
+  if (tab === 'subs') {
+    loadSubscriptions();
+  } else if (tab === 'deals') {
     loadFeaturedDeals();
   } else if (tab === 'under5') {
     sectionTitle.innerHTML = '<i class="fa-solid fa-tags"></i> Juegos por menos de 5€ / 10€';
@@ -387,8 +579,8 @@ function handleTabSwitch(tab) {
     renderGames(filtered);
     resultsCount.textContent = `${filtered.length} juegos en oferta`;
   } else if (tab === 'favorites') {
-    sectionTitle.innerHTML = '<i class="fa-solid fa-star"></i> Mi Lista de Juegos Favoritos';
+    sectionTitle.innerHTML = '<i class="fa-solid fa-star"></i> Mi Lista de Favoritos';
     renderGames(state.favorites);
-    resultsCount.textContent = `${state.favorites.length} juegos guardados`;
+    resultsCount.textContent = `${state.favorites.length} guardados`;
   }
 }

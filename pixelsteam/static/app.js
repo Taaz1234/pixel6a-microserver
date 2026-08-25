@@ -1,5 +1,5 @@
 /* =========================================================
-   PixelGlobal Deals - Frontend Logic & Interactivity v1.2
+   PixelGlobal Deals - Frontend Logic & Interactivity v1.3
    ========================================================= */
 
 const state = {
@@ -33,6 +33,26 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSubscriptions();
   setupEventListeners();
 });
+
+// Manejador ultra-robusto de imágenes de Steam con multi-fallback
+function handleSteamImgError(img, appid, name = 'Juego Steam') {
+  const step = parseInt(img.dataset.step || '0', 10);
+  
+  if (step === 0) {
+    img.dataset.step = '1';
+    img.src = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appid}/capsule_616x353.jpg`;
+  } else if (step === 1) {
+    img.dataset.step = '2';
+    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/header.jpg`;
+  } else if (step === 2) {
+    img.dataset.step = '3';
+    img.src = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/capsule_184x69.jpg`;
+  } else {
+    img.onerror = null;
+    // Placeholder estilizado SVG cyberpunk en caso de juego sin portada pública
+    img.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="460" height="215" viewBox="0 0 460 215"><rect width="100%" height="100%" fill="%23141b29"/><circle cx="230" cy="90" r="36" fill="%231a9fff" opacity="0.15"/><path d="M218 80h24M230 68v24M215 98h30" stroke="%231a9fff" stroke-width="3" stroke-linecap="round"/><text x="50%" y="150" font-family="sans-serif" font-size="16" font-weight="bold" fill="%2394a3b8" text-anchor="middle">${encodeURIComponent(name.substring(0, 28))}</text></svg>`;
+  }
+}
 
 function setupEventListeners() {
   searchInput.addEventListener('input', (e) => {
@@ -163,7 +183,7 @@ function renderSubscriptions(subs) {
         </button>
 
         <div class="sub-header-banner" style="background: linear-gradient(135deg, ${sub.color}40, #141b29);">
-          <img src="${sub.image}" alt="${sub.name}">
+          <img src="${sub.image}" alt="${sub.name}" onerror="this.style.display='none'">
           <span class="sub-badge-category">${sub.category}</span>
           <div class="sub-icon-badge" style="background: ${sub.color};">
             <i class="${sub.icon}"></i>
@@ -335,9 +355,10 @@ async function fetchSuggestions(query) {
 
     if (items && items.length > 0) {
       items.slice(0, 5).forEach(item => {
+        const imgSrc = item.header_image || item.image;
         html += `
           <div class="suggestion-item" onclick="openGameModal(${item.id})">
-            <img src="${item.header_image}" class="suggestion-img" alt="${item.name}" onerror="this.src='${item.image}'">
+            <img src="${imgSrc}" class="suggestion-img" alt="${item.name}" onerror="handleSteamImgError(this, ${item.id}, '${item.name.replace(/'/g, "\\'")}')">
             <div class="suggestion-info">
               <div class="suggestion-name">${item.name}</div>
               <div class="suggestion-price">
@@ -402,6 +423,7 @@ function renderGames(games) {
     const origPrice = game.original_price !== undefined ? game.original_price : game.original_price_es;
     const discount = game.discount || 0;
     const isFree = finalPrice === 0;
+    const mainImg = game.header_image || game.image || `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
 
     return `
       <div class="game-card" onclick="openGameModal(${game.id})">
@@ -410,7 +432,7 @@ function renderGames(games) {
         </button>
 
         <div class="card-img-wrapper">
-          <img src="${game.header_image || game.image}" alt="${game.name}" loading="lazy">
+          <img src="${mainImg}" alt="${game.name}" loading="lazy" onerror="handleSteamImgError(this, ${game.id}, '${game.name.replace(/'/g, "\\'")}')">
           ${discount > 0 ? `<div class="discount-badge">-${discount}%</div>` : ''}
         </div>
 
@@ -467,10 +489,11 @@ async function openGameModal(appid) {
 
 function renderGameModalContent(game) {
   const cheapest = game.cheapest_region;
+  const headerImg = game.header_image || `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
 
   modalContent.innerHTML = `
     <div class="modal-header-hero">
-      <img src="${game.header_image}" class="modal-poster" alt="${game.name}">
+      <img src="${headerImg}" class="modal-poster" alt="${game.name}" onerror="handleSteamImgError(this, ${game.id}, '${game.name.replace(/'/g, "\\'")}')">
       <div class="modal-info">
         <h3 class="modal-title">${game.name}</h3>
         <div class="modal-meta">

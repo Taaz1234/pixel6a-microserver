@@ -169,12 +169,18 @@ def search_steam_games(query):
             if initial > 0:
                 discount = int(round((1.0 - (final / initial)) * 100))
 
+            appid = item.get("id")
+            tiny = item.get("tiny_image", "")
+            header = f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"
+            capsule = f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/capsule_616x353.jpg"
+
             items.append({
-                "id": item.get("id"),
+                "id": appid,
                 "name": item.get("name"),
                 "type": item.get("type", "game"),
-                "image": item.get("tiny_image", f"https://cdn.akamai.steamstatic.com/steam/apps/{item.get('id')}/header.jpg"),
-                "header_image": f"https://cdn.akamai.steamstatic.com/steam/apps/{item.get('id')}/header.jpg",
+                "image": tiny if tiny else header,
+                "header_image": header,
+                "capsule_image": capsule,
                 "price_es": final,
                 "original_price_es": initial,
                 "discount": discount,
@@ -306,10 +312,13 @@ def get_featured_deals():
             orig = item.get("original_price", 0) / 100.0
             final = item.get("final_price", 0) / 100.0
             disc = item.get("discount_percent", 0)
+            appid = item.get("id")
+            img = item.get("header_image") or item.get("large_capsule_image") or f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"
             deals.append({
-                "id": item.get("id"),
+                "id": appid,
                 "name": item.get("name"),
-                "image": item.get("header_image"),
+                "image": img,
+                "header_image": img,
                 "original_price": orig,
                 "final_price": final,
                 "discount": disc,

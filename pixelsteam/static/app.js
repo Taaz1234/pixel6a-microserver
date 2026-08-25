@@ -438,6 +438,10 @@ function renderGames(games) {
 
         <div class="card-body">
           <h4 class="card-title" title="${game.name}">${game.name}</h4>
+          <div style="display: flex; gap: 0.4rem; margin-top: 0.35rem; align-items: center; flex-wrap: wrap;">
+            ${game.metacritic ? `<span class="meta-chip score" style="font-size: 0.72rem; padding: 0.15rem 0.45rem;"><i class="fa-solid fa-award"></i> ${game.metacritic}</span>` : ''}
+            ${game.steam_rating ? `<span class="meta-chip" style="font-size: 0.72rem; padding: 0.15rem 0.45rem; background: rgba(30, 201, 151, 0.15); color: var(--accent-green);"><i class="fa-solid fa-thumbs-up"></i> ${game.steam_rating}%</span>` : ''}
+          </div>
           
           <div class="card-footer">
             <div class="price-box">

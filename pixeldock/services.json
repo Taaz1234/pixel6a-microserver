@@ -1,19 +1,5 @@
 [
   {
-    "id": "pixelproxy",
-    "name": "PixelProxy & Tunnel Pro",
-    "category": "Red & Seguridad",
-    "port": 8082,
-    "web_url": "http://192.168.1.135:8082",
-    "icon": "fa-network-wired",
-    "color": "#F38020",
-    "description": "Enrutador de dominios, proxy inverso y túneles públicos Cloudflare HTTPS.",
-    "match_pattern": "pixelproxy/server.py",
-    "log_file": "/data/pixelserver/pixelproxy.log",
-    "start_cmd": "su -c 'sh /data/local/tmp/launch_pixelproxy.sh'",
-    "stop_cmd": "su -c 'pkill -9 -f \"pixelproxy/server.py\" || true'"
-  },
-  {
     "id": "adguard",
     "name": "AdGuard Home DNS",
     "category": "Red & Seguridad",

@@ -39,7 +39,8 @@ EXCHANGE_RATES = {
     "PKR": 0.0033,   # Pakistán
     "NGN": 0.00061,  # Nigeria
     "EGP": 0.019,    # Egipto
-    "PHP": 0.016     # Filipinas
+    "PHP": 0.016,    # Filipinas
+    "ZAR": 0.051     # Sudáfrica (Rand)
 }
 
 REGIONS = [

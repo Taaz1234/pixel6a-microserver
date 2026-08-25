@@ -8,14 +8,14 @@
     "image": "https://compass-ssl.xbox.com/assets/f0/cd/f0cd237c-3720-4a7b-83c3-d9faecb6cc44.jpg?n=Game-Pass-Ultimate_Sharing-Image_1920x1080.jpg",
     "spain_price": 19.99,
     "prices": [
-      {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 549, "rate_key": "INR"},
-      {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 309, "rate_key": "TRY"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 59.99, "rate_key": "BRL"},
-      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 14999, "rate_key": "ARS"},
+      {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 1089, "rate_key": "INR"},
+      {"region": "Sudáfrica", "flag": "🇿🇦", "currency": "ZAR", "amount": 239, "rate_key": "ZAR"},
+      {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 499, "rate_key": "TRY"},
       {"region": "EE.UU.", "flag": "🇺🇸", "currency": "USD", "amount": 19.99, "rate_key": "USD"},
       {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 19.99, "rate_key": "EUR"}
     ],
-    "notes": "Incluye cientos de juegos día 1 (Call of Duty, Indiana Jones), EA Play, multijugador y nube."
+    "notes": "Incluye cientos de juegos, EA Play, multijugador online y juego en la nube (Cloud Gaming)."
   },
   {
     "id": "netflix",
@@ -24,18 +24,17 @@
     "icon": "fa-brands fa-netflix",
     "color": "#E50914",
     "image": "https://assets.nflxext.com/ffe/siteui/vlv3/9c5457b8-9ab0-4a04-9fc1-e608d5670f1a/711a76a8-7f91-455b-9d41-477cfb8813a4/ES-es-20210719-popsignuptwoweeks-perspective_alpha_website_small.jpg",
-    "spain_price": 19.99,
+    "spain_price": 21.99,
     "prices": [
       {"region": "Pakistán", "flag": "🇵🇰", "currency": "PKR", "amount": 1100, "rate_key": "PKR"},
-      {"region": "Nigeria", "flag": "🇳🇬", "currency": "NGN", "amount": 5000, "rate_key": "NGN"},
-      {"region": "Egipto", "flag": "🇪🇬", "currency": "EGP", "amount": 250, "rate_key": "EGP"},
+      {"region": "Egipto", "flag": "🇪🇬", "currency": "EGP", "amount": 270, "rate_key": "EGP"},
+      {"region": "Nigeria", "flag": "🇳🇬", "currency": "NGN", "amount": 8500, "rate_key": "NGN"},
       {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 379.99, "rate_key": "TRY"},
-      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 12999, "rate_key": "ARS"},
       {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 649, "rate_key": "INR"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 59.90, "rate_key": "BRL"},
-      {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 19.99, "rate_key": "EUR"}
+      {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 21.99, "rate_key": "EUR"}
     ],
-    "notes": "Plan 4K Ultra HD sin anuncios con audio espacial y descargas en 6 dispositivos."
+    "notes": "Plan 4K Ultra HD sin anuncios con audio espacial y descargas en hasta 6 dispositivos."
   },
   {
     "id": "youtube",
@@ -44,17 +43,16 @@
     "icon": "fa-brands fa-youtube",
     "color": "#FF0000",
     "image": "https://www.gstatic.com/youtube/img/promos/growth/ytp_full_social_banner_1920x1080.png",
-    "spain_price": 13.99,
+    "spain_price": 15.99,
     "prices": [
+      {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 149, "rate_key": "INR"},
       {"region": "Ucrania", "flag": "🇺🇦", "currency": "UAH", "amount": 99, "rate_key": "UAH"},
       {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 79.99, "rate_key": "TRY"},
-      {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 149, "rate_key": "INR"},
       {"region": "Filipinas", "flag": "🇵🇭", "currency": "PHP", "amount": 159, "rate_key": "PHP"},
-      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 3899, "rate_key": "ARS"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 24.90, "rate_key": "BRL"},
-      {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 13.99, "rate_key": "EUR"}
+      {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 15.99, "rate_key": "EUR"}
     ],
-    "notes": "Cero anuncios en YouTube, reproducción en segundo plano y YouTube Music Premium incluido."
+    "notes": "Cero anuncios en todos los vídeos de YouTube, reproducción en segundo plano y YouTube Music Premium."
   },
   {
     "id": "spotify",
@@ -70,7 +68,6 @@
       {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 69.99, "rate_key": "TRY"},
       {"region": "Filipinas", "flag": "🇵🇭", "currency": "PHP", "amount": 149, "rate_key": "PHP"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 21.90, "rate_key": "BRL"},
-      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 2999, "rate_key": "ARS"},
       {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 11.99, "rate_key": "EUR"}
     ],
     "notes": "Música sin anuncios a máxima calidad (320kbps) y descargas offline ilimitadas."
@@ -84,10 +81,9 @@
     "image": "https://static-assets.bamgrid.com/product/disneyplus/images/share-default.14fadd993578b3f1718d16bf63763ff8.png",
     "spain_price": 13.99,
     "prices": [
-      {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 199.99, "rate_key": "TRY"},
       {"region": "India", "flag": "🇮🇳", "currency": "INR", "amount": 299, "rate_key": "INR"},
+      {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 199.99, "rate_key": "TRY"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 43.90, "rate_key": "BRL"},
-      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 8499, "rate_key": "ARS"},
       {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 13.99, "rate_key": "EUR"}
     ],
     "notes": "Contenido de Disney, Pixar, Marvel, Star Wars, National Geographic y Star en 4K."
@@ -102,8 +98,8 @@
     "spain_price": 13.99,
     "prices": [
       {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 149.99, "rate_key": "TRY"},
-      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 4999, "rate_key": "ARS"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 39.90, "rate_key": "BRL"},
+      {"region": "Argentina", "flag": "🇦🇷", "currency": "ARS", "amount": 4999, "rate_key": "ARS"},
       {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 13.99, "rate_key": "EUR"}
     ],
     "notes": "Series exclusivas de HBO, películas de Warner Bros y eventos deportivos en directo."
@@ -134,8 +130,8 @@
     "spain_price": 22.99,
     "prices": [
       {"region": "Turquía", "flag": "🇹🇷", "currency": "TRY", "amount": 499.99, "rate_key": "TRY"},
-      {"region": "EE.UU.", "flag": "🇺🇸", "currency": "USD", "amount": 20.00, "rate_key": "USD"},
       {"region": "Brasil", "flag": "🇧🇷", "currency": "BRL", "amount": 99.90, "rate_key": "BRL"},
+      {"region": "EE.UU.", "flag": "🇺🇸", "currency": "USD", "amount": 20.00, "rate_key": "USD"},
       {"region": "España / Europa", "flag": "🇪🇸", "currency": "EUR", "amount": 22.99, "rate_key": "EUR"}
     ],
     "notes": "Acceso ilimitado a GPT-4o, generación de imágenes con DALL-E 3 y modo de voz avanzado."

@@ -601,6 +601,24 @@ function toggleFavorite(e, item) {
   }
 }
 
+// Cargar juegos por menos de 5€
+async function loadUnder5Deals() {
+  showLoader(true);
+  sectionTitle.innerHTML = '<i class="fa-solid fa-tags"></i> Joyas y Juegos por menos de 5€';
+
+  try {
+    const res = await fetch('/api/under5');
+    const under5 = await res.json();
+    renderGames(under5);
+    resultsCount.textContent = `${under5.length} juegos por menos de 5€ encontrados`;
+  } catch (err) {
+    console.error(err);
+    gamesGrid.innerHTML = `<div class="error-msg">Error al cargar juegos de menos de 5€.</div>`;
+  } finally {
+    showLoader(false);
+  }
+}
+
 // Cambio de pestaña
 function handleTabSwitch(tab) {
   if (tab === 'subs') {
@@ -608,10 +626,7 @@ function handleTabSwitch(tab) {
   } else if (tab === 'deals') {
     loadFeaturedDeals();
   } else if (tab === 'under5') {
-    sectionTitle.innerHTML = '<i class="fa-solid fa-tags"></i> Juegos por menos de 5€ / 10€';
-    const filtered = state.deals.filter(d => d.final_price <= 10.0);
-    renderGames(filtered);
-    resultsCount.textContent = `${filtered.length} juegos en oferta`;
+    loadUnder5Deals();
   } else if (tab === 'favorites') {
     sectionTitle.innerHTML = '<i class="fa-solid fa-star"></i> Mi Lista de Favoritos';
     renderGames(state.favorites);

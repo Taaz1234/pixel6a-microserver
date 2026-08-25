@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PixelGlobal Deals & Subscriptions Server v1.2.0
-Self-hosted Global Regional Price Comparator with Real-Time Daily Currency Auto-Updater.
+PixelGlobal Deals & Subscriptions Server v1.3.0
+Self-hosted Global Regional Price Comparator with High-Volume Steam Deals & Under 5€ feeds.
 """
 
 import http.server
@@ -55,13 +55,17 @@ REGIONS = [
     {"code": "us", "name": "Estados Unidos", "flag": "🇺🇸", "currency": "USD"}
 ]
 
-def fetch_json(url):
-    req = urllib.request.Request(url, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+def fetch_json(url, custom_headers=None):
+    headers = {
+        "User-Agent": "PixelSteamDeals/1.0 (https://github.com/Taaz1234/pixel6a-microserver)",
         "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
-    })
+    }
+    if custom_headers:
+        headers.update(custom_headers)
+
+    req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=8) as resp:
+        with urllib.request.urlopen(req, timeout=9) as resp:
             return json.loads(resp.read().decode("utf-8", errors="ignore"))
     except Exception as e:
         return None
@@ -81,17 +85,13 @@ def update_exchange_rates():
     except Exception as e:
         print(f"[!] Fallback a tasas base: {e}")
 
-# Hilo en segundo plano para actualización diaria continua cada 6 horas
 def background_daily_updater():
     while True:
-        time.sleep(21600)  # Cada 6 horas
-        print("[+] Ejecutando actualización periódica de tasas...")
+        time.sleep(21600)
         update_exchange_rates()
 
 updater_thread = threading.Thread(target=background_daily_updater, daemon=True)
 updater_thread.start()
-
-# Primera actualización
 update_exchange_rates()
 
 def load_subscriptions_data():
@@ -127,7 +127,6 @@ def get_processed_subscriptions():
                 "saved_pct": saved_pct
             })
 
-        # Ordenar de más barato a más caro
         regional_list.sort(key=lambda x: x["eur_price"])
         cheapest = regional_list[0] if regional_list else None
         yearly_saving = round(cheapest["saved_eur"] * 12, 2) if cheapest else 0
@@ -281,7 +280,7 @@ def get_game_details(appid):
         "id": appid,
         "name": game.get("name"),
         "type": game.get("type"),
-        "header_image": game.get("header_image"),
+        "header_image": game.get("header_image", f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"),
         "short_description": game.get("short_description"),
         "developers": game.get("developers", []),
         "publishers": game.get("publishers", []),
@@ -298,36 +297,101 @@ def get_game_details(appid):
     CACHE[cache_key] = {"data": result, "time": now}
     return result
 
-def get_featured_deals():
-    cache_key = "featured_deals"
+def get_large_deals():
+    cache_key = "large_deals"
     now = time.time()
     if cache_key in CACHE and now - CACHE[cache_key]["time"] < 1800:
         return CACHE[cache_key]["data"]
 
-    url = "https://store.steampowered.com/api/featuredcategories/?cc=es&l=spanish"
-    data = fetch_json(url)
-    deals = []
-    if data and "specials" in data and "items" in data["specials"]:
-        for item in data["specials"]["items"]:
-            orig = item.get("original_price", 0) / 100.0
-            final = item.get("final_price", 0) / 100.0
-            disc = item.get("discount_percent", 0)
-            appid = item.get("id")
-            img = item.get("header_image") or item.get("large_capsule_image") or f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"
-            deals.append({
-                "id": appid,
-                "name": item.get("name"),
-                "image": img,
-                "header_image": img,
-                "original_price": orig,
-                "final_price": final,
-                "discount": disc,
-                "currency": "EUR"
-            })
+    deals_dict = {}
 
-    deals.sort(key=lambda x: x["discount"], reverse=True)
-    CACHE[cache_key] = {"data": deals, "time": now}
-    return deals
+    # 1. Obtener Top Deals de CheapShark (Store 1 = Steam) con mayor descuento
+    cs_url = "https://www.cheapshark.com/api/1.0/deals?storeID=1&sortBy=Savings&pageSize=60"
+    cs_data = fetch_json(cs_url)
+    if cs_data and isinstance(cs_data, list):
+        for item in cs_data:
+            steam_id = item.get("steamAppID")
+            if steam_id and steam_id.isdigit():
+                appid = int(steam_id)
+                sale_price = float(item.get("salePrice", 0))
+                norm_price = float(item.get("normalPrice", 0))
+                savings = int(round(float(item.get("savings", 0))))
+                header_url = f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"
+
+                deals_dict[appid] = {
+                    "id": appid,
+                    "name": item.get("title"),
+                    "image": header_url,
+                    "header_image": header_url,
+                    "original_price": norm_price,
+                    "final_price": sale_price,
+                    "discount": savings,
+                    "metacritic": item.get("metacriticScore"),
+                    "currency": "EUR"
+                }
+
+    # 2. Complementar con Steam Featured Specials
+    steam_url = "https://store.steampowered.com/api/featuredcategories/?cc=es&l=spanish"
+    steam_data = fetch_json(steam_url)
+    if steam_data and "specials" in steam_data and "items" in steam_data["specials"]:
+        for item in steam_data["specials"]["items"]:
+            appid = item.get("id")
+            if appid not in deals_dict:
+                orig = item.get("original_price", 0) / 100.0
+                final = item.get("final_price", 0) / 100.0
+                disc = item.get("discount_percent", 0)
+                img = item.get("header_image") or item.get("large_capsule_image") or f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"
+
+                deals_dict[appid] = {
+                    "id": appid,
+                    "name": item.get("name"),
+                    "image": img,
+                    "header_image": img,
+                    "original_price": orig,
+                    "final_price": final,
+                    "discount": disc,
+                    "currency": "EUR"
+                }
+
+    all_deals = list(deals_dict.values())
+    all_deals.sort(key=lambda x: x["discount"], reverse=True)
+    CACHE[cache_key] = {"data": all_deals, "time": now}
+    return all_deals
+
+def get_under5_deals():
+    cache_key = "under5_deals"
+    now = time.time()
+    if cache_key in CACHE and now - CACHE[cache_key]["time"] < 1800:
+        return CACHE[cache_key]["data"]
+
+    url = "https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=5&sortBy=Savings&pageSize=60"
+    data = fetch_json(url)
+    under5 = []
+
+    if data and isinstance(data, list):
+        for item in data:
+            steam_id = item.get("steamAppID")
+            if steam_id and steam_id.isdigit():
+                appid = int(steam_id)
+                sale_price = float(item.get("salePrice", 0))
+                norm_price = float(item.get("normalPrice", 0))
+                savings = int(round(float(item.get("savings", 0))))
+                header_url = f"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg"
+
+                under5.append({
+                    "id": appid,
+                    "name": item.get("title"),
+                    "image": header_url,
+                    "header_image": header_url,
+                    "original_price": norm_price,
+                    "final_price": sale_price,
+                    "discount": savings,
+                    "currency": "EUR"
+                })
+
+    under5.sort(key=lambda x: x["final_price"])
+    CACHE[cache_key] = {"data": under5, "time": now}
+    return under5
 
 class MainRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -355,7 +419,11 @@ class MainRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({"error": "ID no válido"}, 400)
 
         elif path == "/api/deals":
-            deals = get_featured_deals()
+            deals = get_large_deals()
+            self.send_json(deals)
+
+        elif path == "/api/under5":
+            deals = get_under5_deals()
             self.send_json(deals)
 
         elif path == "/api/subscriptions":
@@ -385,9 +453,9 @@ class MainRequestHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     os.makedirs(STATIC_DIR, exist_ok=True)
     print(f"==================================================")
-    print(f"🎮 PixelGlobal Deals & Subscriptions Server v1.2.0")
+    print(f"🎮 PixelGlobal Deals & Subscriptions Server v1.3.0")
     print(f"📡 Escuchando en: http://0.0.0.0:{PORT}")
-    print(f"🔄 Auto-Actualizador Diario en Tiempo Real Activo")
+    print(f"🔥 Catálogo Masivo de Chollos y Juegos <5€ Activo")
     print(f"💾 Servidor Microserver Pixel 6a")
     print(f"==================================================")
     
